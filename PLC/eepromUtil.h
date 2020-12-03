@@ -3,7 +3,7 @@
 
 #include <EEPROM.h>
 
-static class EepromUtil {
+class EepromUtil {
 private:
     static const uint8_t rangeMin = 10;
     static const uint8_t rangeMax = 60;

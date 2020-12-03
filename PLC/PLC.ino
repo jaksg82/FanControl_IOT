@@ -3,8 +3,8 @@
 #include <SimpleRelay.h>
 #include <Wire.h>
 #include "pinConfig.h"
-#include "lib/Debug.h"
-#include "lib/eepromUtil.h"
+#include "Debug.h"
+#include "eepromUtil.h"
 
 // PWM output for the fan
 #define PWM6 OCR4D      // Pin 6 shortcut
@@ -233,35 +233,6 @@ void loop()
 //---------------------------------------------------------------------------------------
 // i2c comm functions
 //---------------------------------------------------------------------------------------
-void readRequest() {
-    for (int i = 0; i < RequestSize; i++) {
-        requestMsg[i] = Wire.read();
-    }
-    // Parse the message for the specific request
-    if (requestMsg[0] == 'S') {          // Set messages
-        if (requestMsg[3] == 'T') {      // Set temperature range
-            byte tmin = EepromUtil::FitInTemp(requestMsg[4]);
-            byte tmax = EepromUtil::FitInTemp(requestMsg[5]);
-            if (EepromUtil::isTargetValid(tmin, tmax)) {
-                if (TargetTempMin != tmin || TargetTempMax != tmax) {
-                    TargetTempMin = tmin;
-                    TargetTempMax = tmax;
-                    EepromUtil::SetConfigToEeprom(&TargetTempMin, &TargetTempMax);
-                }
-            }
-            sendAnswer(true);            // Send back the range value accepted
-        }
-    }
-    else if (requestMsg[0] == 'G') {     // Get messages
-        if (requestMsg[3] == 'S') {      // Get status message
-            sendAnswer();                // Reply with the status message
-        }
-        else if (requestMsg[3] == 'R') {
-            sendAnswer(true);            // Reply with the range message
-        }
-    }
-}
-
 void sendAnswer(bool isRange = false) {
     if (isRange) { // Send Temperature range message
         responseMsg[0] = 'R';
@@ -291,6 +262,36 @@ void sendAnswer(bool isRange = false) {
     }
     Wire.write(responseMsg, ResponseSize);
 }
+
+void readRequest() {
+    for (int i = 0; i < RequestSize; i++) {
+        requestMsg[i] = Wire.read();
+    }
+    // Parse the message for the specific request
+    if (requestMsg[0] == 'S') {          // Set messages
+        if (requestMsg[3] == 'T') {      // Set temperature range
+            byte tmin = EepromUtil::FitInTemp(requestMsg[4]);
+            byte tmax = EepromUtil::FitInTemp(requestMsg[5]);
+            if (EepromUtil::isTargetValid(tmin, tmax)) {
+                if (TargetTempMin != tmin || TargetTempMax != tmax) {
+                    TargetTempMin = tmin;
+                    TargetTempMax = tmax;
+                    EepromUtil::SetConfigToEeprom(&TargetTempMin, &TargetTempMax);
+                }
+            }
+            sendAnswer(true);            // Send back the range value accepted
+        }
+    }
+    else if (requestMsg[0] == 'G') {     // Get messages
+        if (requestMsg[3] == 'S') {      // Get status message
+            sendAnswer();                // Reply with the status message
+        }
+        else if (requestMsg[3] == 'R') {
+            sendAnswer(true);            // Reply with the range message
+        }
+    }
+}
+
 
 //---------------------------------------------------------------------------------------
 // Temperature sensor functions

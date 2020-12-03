@@ -2,7 +2,7 @@
 #define DEBUG_H
 
 
-static class Debug {
+class Debug {
 public:
 	template <class T>
 	static void print(T value) {
