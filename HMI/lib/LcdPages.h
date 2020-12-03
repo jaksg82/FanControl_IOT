@@ -17,7 +17,7 @@
 
 class LcdPages {
   private:
-    byte _totalPages = 2;
+    byte _totalPages = 4;
 	byte _actualPage = 0;
 	byte _t0 = 0;
     byte _h0 = 0;
@@ -25,6 +25,7 @@ class LcdPages {
     byte _h1 = 0;
     byte _tmin = 0;
     byte _tmax = 0;
+	byte _ttemp = 0;
 	byte _fanPerc = 0;
 	bool _isOff = true;
 	//  16 chars   0000000000111111  
@@ -33,7 +34,8 @@ class LcdPages {
 	string p0_1 = "Fan:    %   ON  ";
 	string p1_0 = "Temperatures    ";
     string p1_1 = "Min:  ° Max:  ° ";
-	
+	bool _isEditPage = false;
+
 	// pointer to the lcd display class
 	LiquidCrystal* _lcd;
 	
@@ -41,7 +43,10 @@ class LcdPages {
 	void changeActualTempString();
 	void changeFanString();
 	void changeTempRangeString();
-	
+	void changeTempRangeString(byte tmin, byte tmax);
+
+	// LCD content updater
+	bool updateLcd();
 	
   public:
     // Constructor
