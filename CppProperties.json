@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "name": "ArduinoIDE",
+      "includePath": [
+        "${env.INCLUDE}",
+        "${workspaceRoot}\\**",
+        "C:\\Users\\jaksg\\Documents\\Arduino\\libraries\\**",
+        "C:\\Program Files (x86)\\Arduino\\libraries\\**",
+        "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\**"
+      ],
+      "defines": [
+        "WIN32",
+        "NDEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x86"
+    }
+  ]
+}

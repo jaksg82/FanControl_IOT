@@ -1,22 +1,19 @@
 #include <SimpleDHT.h>
-#include <Adafruit_LiquidCrystal.h>
 #include <EEPROM.h>
 #include <SimpleRelay.h>
-#include "FanControl_Pins.h"
+#include <Wire.h>
+#include "pinConfig.h"
+#include "lib/Debug.h"
+#include "lib/eepromUtil.h"
 
 // PWM output for the fan
 #define PWM6 OCR4D      // Pin 6 shortcut
 #define PWM6_MAX OCR4C  // Terminal count
 
-
-// Tells the amount of time (in ms) to wait between updates
-const int PWM_SAMPLETIME = 2000;
-const int DHT_SAMPLETIME = 2000;
-const int USB_SAMPLETIME = 1000;
-const long debounceDelay = 250;
-
+/* PWM calculations */
 const int DUTY_MIN = 64;        // The minimum fans speed (0...255)
 const int DUTY_DEAD_ZONE = 64;  // The delta between the minimum output for the PID and DUTY_MIN (DUTY_MIN - DUTY_DEAD_ZONE).
+double duty;                    // The actual pwm value
 
 /* RPM calculation */
 volatile unsigned long duration = 0; // accumulates pulse width
@@ -24,36 +21,33 @@ volatile unsigned int pulsecount = 0;
 volatile unsigned long previousMicros = 0;
 int ticks = 0, speed = 0;
 
-unsigned long prevPwm, prevDht, prevUsb, lastDebounceTime = 0; // Time placeholders
+/* I2C Comm Configs */
+const int NodeReadDelay = 100;
+const byte NodeAddress = 1;
+const byte ResponseSize = 10;
+const byte RequestSize = 6;
+byte responseMsg[ResponseSize];
+byte requestMsg[RequestSize];
 
-double duty;
-// Display temp, .5 rounded and Compute temp, integer (declared as double because of PID library input);
-//double dtemp, ctemp;
-//double targetTemp = 40;
+/* Tells the amount of time (in ms) to wait between updates */
+const int PWM_SAMPLETIME = 2000;
+const int DHT_SAMPLETIME = 2000;
+const int USB_SAMPLETIME = 1000;
+const long debounceDelay = 250;
+unsigned long prevPwm, prevDht, prevUsb, prevComm, lastDebounceTime = 0; // Time placeholders
+
 
 // Sensors Values
 byte Temperature1 = 0;
 byte Temperature2 = 0;
 byte Humidity1 = 0;
 byte Humidity2 = 0;
-
-// LCD Pages Strings
-int actualPage = 1;
 byte TargetTempMin = 25;
 byte TargetTempMax = 35;
-byte TempMod = 0;
-String LcdDHT = "";
-String LcdStatus = "";
-String LcdTargetMinTitle = "Fan Min Temp.   ";
-String LcdTargetMaxTitle = "Fan Max Temp.   ";
-String LcdTarget = "";
-String DebugDHT = "";
-bool LcdNeedUpdate = true;
 
 
 // Initialize all the libraries.
 SimpleDHT11 sensor1(TEMP1_IN), sensor2(TEMP2_IN);
-Adafruit_LiquidCrystal lcd(Lcd_RS, Lcd_Enable, Lcd_D4, Lcd_D5, Lcd_D6, Lcd_D7);
 SimpleRelay fanRelay = SimpleRelay(RELAY);
 
 /* Configure the PWM clock */
@@ -97,93 +91,75 @@ void pickRPM ()
   }
 }
 
-/* Custom LCD Characters */
-const byte degCelsius[] = {B11000, B11000, B00111, B01000, B01000, B01000, B01000, B00111};
-const byte usbChar[] = {B00100, B01110, B00100, B10101, B10101, B01101, B00110, B00100};
 
 void setup()
 {
-  // Setup LCD and display a message
-  lcd.begin(16, 2);
-  lcd.createChar(0, degCelsius);
-  lcd.createChar(1, usbChar);
-  lcd.setCursor(0, 0);
-  lcd.print("Starting up ...");
-
-  //Set the chip for USB connection check
-  USBCON|=(1<<OTGPADE); //enables VBUS pad
-  checkUsb();
-
-  //pinMode(SPD_IN, INPUT);
-  //pinMode(RELAY, OUTPUT);
-  pinMode(BTN_UP, INPUT_PULLUP);
-  pinMode(BTN_DOWN, INPUT_PULLUP);
-  pinMode(BTN_CANC, INPUT_PULLUP);
-  pinMode(BTN_OK, INPUT_PULLUP);
-
+  // Set the needed pins
+ 
   // RPM reading interrupt
   //attachInterrupt(digitalPinToInterrupt(SPD_IN), pickRPM, FALLING);
 
+  // Configure the clock on Timer 4
   pwm6configure();
 
-  lcd.setCursor(0, 1);
-  lcd.print("Fans............");
-  DEBUG("Fans...");
+  Debug::println("Fans...");
   fanRelay.on();
   pwmSet6(255);
   // Let the fan run for 5s. Here we could add a fan health control to see if the fan revs to a certain value.
   delay(5000);
   fanRelay.off();
 
-  lcd.setCursor(0, 1);
-  lcd.print("Sensors.........");
-  DEBUG("Sensor...");
+  // Get the first read of sensor
+  Debug::println("Sensor...");
   GetSensorData(&sensor1, &Temperature1, &Humidity1);
   GetSensorData(&sensor2, &Temperature2, &Humidity2);
-  FormatDhtString();
-  DEBUG(DebugDHT);
-  DEBUG("\n");
+  Debug::print("T1: ");
+  Debug::print(Temperature1);
+  Debug::print(" H1: ");
+  Debug::print(Humidity1);
+  Debug::print(" T2: ");
+  Debug::print(Temperature2);
+  Debug::print(" H2: ");
+  Debug::println(Humidity2);
   delay(1000);
   
   // Check the avalaibility of stored values
-  lcd.setCursor(0, 1);
-  lcd.print("Stored Values...");
-  DEBUG("Stored Values...");
-  GetConfigFromEeprom(&TargetTempMin, &TargetTempMax);
-  if (!isTargetValid()) {
+  Debug::println("Stored Values...");
+  EepromUtil::GetConfigFromEeprom(&TargetTempMin, &TargetTempMax);
+  if (!EepromUtil::isTargetValid(TargetTempMin, TargetTempMax)) {
     TargetTempMin = 25;
     TargetTempMax = 35;
-    SetConfigToEeprom(&TargetTempMin, &TargetTempMax);
+    EepromUtil::SetConfigToEeprom(&TargetTempMin, &TargetTempMax);
   }
-  DEBUG("TargetMin: ");
-  DEBUG(TargetTempMin);
-  DEBUG("TargetMax: ");
-  DEBUG(TargetTempMax);
-  DEBUG("\n");
+  Debug::print("TargetMin: ");
+  Debug::print(TargetTempMin);
+  Debug::print("TargetMax: ");
+  Debug::println(TargetTempMax);
   delay(1000);
   
-  lcd.setCursor(0, 1);
-  lcd.print("Ready to go!    ");
-  DEBUG("Ready.\n\n");
+  Debug::println("Ready.\n\n");
   delay(1000);
 
   prevPwm = millis();
   prevDht = prevPwm;
   prevUsb = prevPwm;
+  prevComm = prevPwm;
+  // Activate i2c
+  Wire.begin(NodeAddress);
 }
 
 void loop()
 {
   unsigned long cur = millis();
 
-  bool up = !digitalRead(BTN_UP);
-  bool down = !digitalRead(BTN_DOWN);
-  bool canc = !digitalRead(BTN_CANC);
-  bool ok = !digitalRead(BTN_OK);
+  //bool up = !digitalRead(BTN_UP);
+  //bool down = !digitalRead(BTN_DOWN);
+  //bool canc = !digitalRead(BTN_CANC);
+  //bool ok = !digitalRead(BTN_OK);
 
-  if (cur - prevUsb >= USB_SAMPLETIME) {
-      checkUsb();
-  }
+  //if (cur - prevUsb >= USB_SAMPLETIME) {
+  //    checkUsb();
+  //}
   
   if (cur - prevDht >= DHT_SAMPLETIME)
   {
@@ -193,7 +169,7 @@ void loop()
 
     GetSensorData(&sensor1, &Temperature1, &Humidity1);
     GetSensorData(&sensor2, &Temperature2, &Humidity2);
-    FormatDhtString();
+    //FormatDhtString();
   }
   
   if (cur - prevPwm >= PWM_SAMPLETIME)
@@ -221,32 +197,121 @@ void loop()
       fanRelay.on();
     }
 
-    FormatStatusString();
+    //FormatStatusString();
     
-    DEBUG("TargetTempMin: ");
-    DEBUG(TargetTempMin);
-    DEBUG(" TargetTempMax: ");
-    DEBUG(TargetTempMax);
-    DEBUG(" Duty: ");
-    DEBUG(duty);
-    DEBUG("\n");
+    Debug::print("TargetTempMin: ");
+    Debug::print(TargetTempMin);
+    Debug::print(" TargetTempMax: ");
+    Debug::print(TargetTempMax);
+    Debug::print(" Duty: ");
+    Debug::println(duty);
   }
 
 
-  //filter out any noise by setting a time buffer
-  if ( (millis() - lastDebounceTime) > debounceDelay) {
-    lastDebounceTime = millis(); //set the current time
-    if (up) {buttonClick(1); DEBUG("Button Up"); DEBUG("\n");}
-    if (down) {buttonClick(2); DEBUG("Button Down"); DEBUG("\n");}
-    if (canc) {buttonClick(4); DEBUG("Button Canc"); DEBUG("\n");}
-    if (ok) {buttonClick(3); DEBUG("Button OK"); DEBUG("\n");}
+  ////filter out any noise by setting a time buffer
+  //if ( (millis() - lastDebounceTime) > debounceDelay) {
+  //  lastDebounceTime = millis(); //set the current time
+  //  if (up) {buttonClick(1); DEBUG("Button Up"); DEBUG("\n");}
+  //  if (down) {buttonClick(2); DEBUG("Button Down"); DEBUG("\n");}
+  //  if (canc) {buttonClick(4); DEBUG("Button Canc"); DEBUG("\n");}
+  //  if (ok) {buttonClick(3); DEBUG("Button OK"); DEBUG("\n");}
 
-    up = HIGH;
-    down = HIGH;
-    canc = HIGH;
-    ok = HIGH;
+  //  up = HIGH;
+  //  down = HIGH;
+  //  canc = HIGH;
+  //  ok = HIGH;
+  //}
+
+  // Check the i2c
+  if (cur - prevComm >= NodeReadDelay) {
+      if (Wire.available() >= RequestSize) {
+          // Read the request message
+      }
   }
+}
 
-  // Update the LCD
-  if (LcdNeedUpdate) { updateLCD(); }
+//---------------------------------------------------------------------------------------
+// i2c comm functions
+//---------------------------------------------------------------------------------------
+void readRequest() {
+    for (int i = 0; i < RequestSize; i++) {
+        requestMsg[i] = Wire.read();
+    }
+    // Parse the message for the specific request
+    if (requestMsg[0] == 'S') {          // Set messages
+        if (requestMsg[3] == 'T') {      // Set temperature range
+            byte tmin = EepromUtil::FitInTemp(requestMsg[4]);
+            byte tmax = EepromUtil::FitInTemp(requestMsg[5]);
+            if (EepromUtil::isTargetValid(tmin, tmax)) {
+                if (TargetTempMin != tmin || TargetTempMax != tmax) {
+                    TargetTempMin = tmin;
+                    TargetTempMax = tmax;
+                    EepromUtil::SetConfigToEeprom(&TargetTempMin, &TargetTempMax);
+                }
+            }
+            sendAnswer(true);            // Send back the range value accepted
+        }
+    }
+    else if (requestMsg[0] == 'G') {     // Get messages
+        if (requestMsg[3] == 'S') {      // Get status message
+            sendAnswer();                // Reply with the status message
+        }
+        else if (requestMsg[3] == 'R') {
+            sendAnswer(true);            // Reply with the range message
+        }
+    }
+}
+
+void sendAnswer(bool isRange = false) {
+    if (isRange) { // Send Temperature range message
+        responseMsg[0] = 'R';
+        responseMsg[1] = 'N';
+        responseMsg[2] = 'G';
+        responseMsg[3] = TargetTempMin;
+        responseMsg[4] = TargetTempMax;
+        responseMsg[5] = '$';
+        responseMsg[6] = '$';
+        responseMsg[7] = '$';
+        responseMsg[8] = '$';
+        responseMsg[9] = '$';
+    }
+    else {         // Send Status message
+        byte fanPerc = (duty / 255) * 100;
+        responseMsg[0] = 'S';
+        responseMsg[1] = 'T';
+        responseMsg[2] = 'S';
+        responseMsg[3] = Temperature1;
+        responseMsg[4] = Humidity1;
+        responseMsg[5] = Temperature2;
+        responseMsg[6] = Humidity2;
+        responseMsg[7] = fanPerc;
+        responseMsg[8] = fanRelay.isRelayOn();
+        responseMsg[9] = '$';
+
+    }
+    Wire.write(responseMsg, ResponseSize);
+}
+
+//---------------------------------------------------------------------------------------
+// Temperature sensor functions
+//---------------------------------------------------------------------------------------
+int GetSensorData(SimpleDHT11* pSensor, byte* ptemperature, byte* phumidity) {
+    byte t = 0, h = 0;
+    byte pdata[40] = { 0 };
+    if (!pSensor->read(&t, &h, pdata))
+    {
+        Debug::print("Temperature: ");
+        Debug::println(t);
+
+        if (!isnan(t)) { *ptemperature = t; }
+        if (!isnan(h)) { *phumidity = h; }
+        return 1;
+    }
+    else
+    {
+        // If there's an error in the sensor, wait 5 seconds to let the communication reset
+        Debug::println("Temperature: Error");
+        return 0;
+    }
+
 }
