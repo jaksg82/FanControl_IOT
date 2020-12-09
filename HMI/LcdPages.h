@@ -30,10 +30,10 @@ class LcdPages {
 	bool _isOff = true;
 	//  16 chars   0000000000111111  
 	//             0123456789012345
-    string p0_0 = "T0:   ° T1:   ° ";
-	string p0_1 = "Fan:    %   ON  ";
-	string p1_0 = "Temperatures    ";
-    string p1_1 = "Min:  ° Max:  ° ";
+    String p0_0 = "T0:   ° T1:   ° ";
+	String p0_1 = "Fan:    %   ON  ";
+	String p1_0 = "Temperatures    ";
+    String p1_1 = "Min:  ° Max:  ° ";
 	bool _isEditPage = false;
 
 	// pointer to the lcd display class

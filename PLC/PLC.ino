@@ -5,6 +5,7 @@
 #include "pinConfig.h"
 #include "Debug.h"
 #include "eepromUtil.h"
+#include "MemoryFree.h"
 
 // PWM output for the fan
 #define PWM6 OCR4D      // Pin 6 shortcut
@@ -24,7 +25,7 @@ int ticks = 0, speed = 0;
 /* I2C Comm Configs */
 const int NodeReadDelay = 100;
 const byte NodeAddress = 1;
-const byte ResponseSize = 10;
+const byte ResponseSize = 11;
 const byte RequestSize = 6;
 byte responseMsg[ResponseSize];
 byte requestMsg[RequestSize];
@@ -152,15 +153,6 @@ void loop()
 {
   unsigned long cur = millis();
 
-  //bool up = !digitalRead(BTN_UP);
-  //bool down = !digitalRead(BTN_DOWN);
-  //bool canc = !digitalRead(BTN_CANC);
-  //bool ok = !digitalRead(BTN_OK);
-
-  //if (cur - prevUsb >= USB_SAMPLETIME) {
-  //    checkUsb();
-  //}
-  
   if (cur - prevDht >= DHT_SAMPLETIME)
   {
     byte t = 0, h = 0;
@@ -169,7 +161,6 @@ void loop()
 
     GetSensorData(&sensor1, &Temperature1, &Humidity1);
     GetSensorData(&sensor2, &Temperature2, &Humidity2);
-    //FormatDhtString();
   }
   
   if (cur - prevPwm >= PWM_SAMPLETIME)
@@ -197,8 +188,7 @@ void loop()
       fanRelay.on();
     }
 
-    //FormatStatusString();
-    
+  
     Debug::print("TargetTempMin: ");
     Debug::print(TargetTempMin);
     Debug::print(" TargetTempMax: ");
@@ -206,26 +196,12 @@ void loop()
     Debug::print(" Duty: ");
     Debug::println(duty);
   }
-
-
-  ////filter out any noise by setting a time buffer
-  //if ( (millis() - lastDebounceTime) > debounceDelay) {
-  //  lastDebounceTime = millis(); //set the current time
-  //  if (up) {buttonClick(1); DEBUG("Button Up"); DEBUG("\n");}
-  //  if (down) {buttonClick(2); DEBUG("Button Down"); DEBUG("\n");}
-  //  if (canc) {buttonClick(4); DEBUG("Button Canc"); DEBUG("\n");}
-  //  if (ok) {buttonClick(3); DEBUG("Button OK"); DEBUG("\n");}
-
-  //  up = HIGH;
-  //  down = HIGH;
-  //  canc = HIGH;
-  //  ok = HIGH;
-  //}
-
+  
   // Check the i2c
   if (cur - prevComm >= NodeReadDelay) {
       if (Wire.available() >= RequestSize) {
           // Read the request message
+          readRequest();
       }
   }
 }
@@ -245,9 +221,11 @@ void sendAnswer(bool isRange = false) {
         responseMsg[7] = '$';
         responseMsg[8] = '$';
         responseMsg[9] = '$';
+        responseMsg[10] = '$';
     }
     else {         // Send Status message
         byte fanPerc = (duty / 255) * 100;
+		    int ram = freeMemory();
         responseMsg[0] = 'S';
         responseMsg[1] = 'T';
         responseMsg[2] = 'S';
@@ -257,8 +235,8 @@ void sendAnswer(bool isRange = false) {
         responseMsg[6] = Humidity2;
         responseMsg[7] = fanPerc;
         responseMsg[8] = fanRelay.isRelayOn();
-        responseMsg[9] = '$';
-
+        responseMsg[9] = (ram >> 8) & 0xFF;
+        responseMsg[10] = ram & 0xFF;
     }
     Wire.write(responseMsg, ResponseSize);
 }

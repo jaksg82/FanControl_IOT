@@ -1,4 +1,6 @@
 #include "LcdPages.h"
+#include <stdio.h>
+
 //----------------------------------------------------------------
 // Constructor and Destructor
 //----------------------------------------------------------------
@@ -76,36 +78,36 @@ void LcdPages::changeTempRangeString(byte tmin, byte tmax) {
 // Private LCD updaters
 //----------------------------------------------------------------
 bool LcdPages::updateLcd() {
-	this->_lcd.clear();
-	switch (this->actualPage) {
+	this->_lcd->clear();
+	switch (this->_actualPage) {
 	case 0: // Status page
-		lcd.noBlink();
-		lcd.setCursor(0, 0);
-		lcd.print(this->p0_0);
-		lcd.setCursor(0, 1);
-		lcd.print(this->p0_1);
+		_lcd->noBlink();
+		_lcd->setCursor(0, 0);
+		_lcd->print(this->p0_0);
+		_lcd->setCursor(0, 1);
+		_lcd->print(this->p0_1);
 		break;
 	case 1: // Temperature range view
-		lcd.noBlink();
-		lcd.setCursor(0, 0);
-		lcd.print(this->p1_0);
-		lcd.setCursor(0, 1);
-		lcd.print(this->p1_1);
+		_lcd->noBlink();
+		_lcd->setCursor(0, 0);
+		_lcd->print(this->p1_0);
+		_lcd->setCursor(0, 1);
+		_lcd->print(this->p1_1);
 		break;
 	case 2: // Temperature MIN Edit
-		lcd.setCursor(0, 0);
-		lcd.print(this->p1_0);
-		lcd.setCursor(0, 1);
-		lcd.print(this->p1_1);
-		lcd.setCursor(5, 1);
-		lcd.blink();
+		_lcd->setCursor(0, 0);
+		_lcd->print(this->p1_0);
+		_lcd->setCursor(0, 1);
+		_lcd->print(this->p1_1);
+		_lcd->setCursor(5, 1);
+		_lcd->blink();
 	case 3: // Temperature MAX Edit
-		lcd.setCursor(0, 0);
-		lcd.print(this->p1_0);
-		lcd.setCursor(0, 1);
-		lcd.print(this->p1_1);
-		lcd.setCursor(13, 1);
-		lcd.blink();
+		_lcd->setCursor(0, 0);
+		_lcd->print(this->p1_0);
+		_lcd->setCursor(0, 1);
+		_lcd->print(this->p1_1);
+		_lcd->setCursor(13, 1);
+		_lcd->blink();
 	}
 }
 
@@ -128,7 +130,9 @@ void LcdPages::updateSensorValues(byte t0, byte t1) {
 void LcdPages::updateSensorValues(byte t0, byte h0, byte t1, byte h1) {
 	this->_h0 = h0;
 	this->_h1 = h1;
-	updateSensorValues(byte t0, byte t1)
+	this->_t0 = t0;
+	this->_t1 = t1;
+	changeActualTempString();
 }
 
 void LcdPages::updateFanStatus(byte fanPerc, bool isOff) {
@@ -142,11 +146,11 @@ void LcdPages::updateFanStatus(byte fanPerc, bool isOff) {
 //----------------------------------------------------------------
 bool LcdPages::buttonPressed(byte btn) {
 	bool res = false;
-	switch (this->actualPage) {
+	switch (this->_actualPage) {
 	case 0: // Status page
 		// Only up & down button work
 		if (btn == BUTTON_UP || btn == BUTTON_DOWN) {
-			this->actualPage = 1;
+			this->_actualPage = 1;
 			res = true;
 		}
 		else {
@@ -156,13 +160,13 @@ bool LcdPages::buttonPressed(byte btn) {
 	case 1: // Temperature Range page
 		// Up & Down go back to status page
 		if (btn == BUTTON_UP || btn == BUTTON_DOWN) {
-			this->actualPage = 0;
+			this->_actualPage = 0;
 			res = true;
 		}
 		// OK to enable change min temperature
 		else if (btn == BUTTON_OK) {
 			this->_ttemp = this->_tmin; // set temp value
-			this->actualPage = 2;
+			this->_actualPage = 2;
 			res = true;
 		}
 		// Canc button do nothing
@@ -185,12 +189,12 @@ bool LcdPages::buttonPressed(byte btn) {
 			this->_tmin = this->_ttemp; // accept value
 			this->_ttemp = this->_tmax; // set new temp value
 			changeTempRangeString(this->_tmin, this->_tmax);
-			this->actualPage = 3; // go to next value
+			this->_actualPage = 3; // go to next value
 			res = true;
 		}
 		if (btn == BUTTON_CANC) {
 			changeTempRangeString(this->_tmin, this->_tmax);
-			this->actualPage = 1; // exit editing
+			this->_actualPage = 1; // exit editing
 			res = true;
 		}
 		break;
@@ -208,12 +212,12 @@ bool LcdPages::buttonPressed(byte btn) {
 		if (btn == BUTTON_OK) {
 			this->_tmax = this->_ttemp; // accept value
 			changeTempRangeString(this->_tmin, this->_tmax);
-			this->actualPage = 1; // exit editing
+			this->_actualPage = 1; // exit editing
 			res = true;
 		}
 		if (btn == BUTTON_CANC) {
 			changeTempRangeString(this->_tmin, this->_tmax);
-			this->actualPage = 1; // exit editing
+			this->_actualPage = 1; // exit editing
 			res = true;
 		}
 		break;
