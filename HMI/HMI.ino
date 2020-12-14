@@ -3,12 +3,13 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include <PubSubClient.h>
+//#include <SSLClient.h>
 
 /* Local headers */
 #include "Debug.h"
 #include "pinConfig.h"
 #include "priv/credentials.h"
-#include "priv/certificates.h"
+//#include "priv/certificates.h"  // Needed for the SSL connection
 
 
 // Update these with values suitable for your network.
@@ -77,6 +78,9 @@ void setup()
   //prevDht = prevPwm;
   //prevUsb = prevPwm;
 
+  //Wire.begin();
+  Serial1.begin(57600);
+  
   // Allow the hardware to sort itself out
   delay(1500);
   lastReconnectAttempt = 0;
@@ -87,11 +91,31 @@ void setup()
 void loop()
 {
   long nowSensors = millis();
-  
+
+  // Check i2c connection
+  if (nowSensors - prevI2C > 2000) {
+    // Request update
+//    Wire.beginTransmission(1);
+//    Wire.write("GETSTS");
+//    Debug::println("GETSTS");
+//    Wire.endTransmission();
+    Wire.requestFrom(1, 20);
+    delay(100);
+    while(Wire.available()) {
+      byte c = Wire.read();
+      Debug::print(c);
+      Debug::print('|');
+    }
+    Debug::println();
+    prevI2C = nowSensors;
+  }
+
+  // Check WiFi Connection
   if (WiFi.status() != WL_CONNECTED) {
     connectWiFi();
   }
 
+  // Check MQTT Connection
   if (!psClient.connected()) {
     long nowWIFI = millis();
     if (nowWIFI - lastReconnectAttempt > 500) {
@@ -106,16 +130,17 @@ void loop()
     // Client connected
     if (nowSensors - lastTopicPublish > 2000) {
       lastTopicPublish = nowSensors;
-      String s0string = getSensor0payload();
-      char s0chars[s0string.length()+2];
-      s0string.toCharArray(s0chars, s0string.length()+1);
-      psClient.publish("qiot/things/simone/NanoIOT/sensor0", s0chars);
-      Debug::println("Sensor 0 Publish");
-      Debug::print("qiot/things/simone/NanoIOT/sensor0");
-      Debug::println(s0chars);
+//      String s0string = getSensor0payload();
+//      char s0chars[s0string.length()+2];
+//      s0string.toCharArray(s0chars, s0string.length()+1);
+      psClient.publish("qiot/things/simone/NanoIOT/sensor0", "{actual: 25}");
+//      Debug::println("Sensor 0 Publish");
+//      Debug::print("qiot/things/simone/NanoIOT/sensor0");
+//      Debug::println(s0chars);
 
     }
     psClient.loop();
   }
+
 
 }

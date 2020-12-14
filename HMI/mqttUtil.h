@@ -10,35 +10,37 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 
-void reconnect() {
+bool reconnect() {
   // Loop until we're reconnected
     Debug::print("Attempting MQTT connection...");
+    Debug::println(mqttCLIENTID);
     // Attempt to connect
-    if (psClient.connect(mqttCLIENTID)) {
+    if (psClient.connect(mqttCLIENTID, mqttUSERNAME, mqttPASSWORD)) {
       Debug::println("connected");
       // Once connected, publish an announcement...
-      psClient.publish("outTopic","hello world");
+      psClient.publish(mqttTopicRoot,"hello world");
       // This is a workaround to address https://github.com/OPEnSLab-OSU/SSLClient/issues/9
-      ethClientSSL.flush();
+      wifiClient.flush();
       // ... and resubscribe
-      psClient.subscribe("inTopic");
+      psClient.subscribe(mqttTopicRoot);
       // This is a workaround to address https://github.com/OPEnSLab-OSU/SSLClient/issues/9
-      ethClientSSL.flush();
+      wifiClient.flush();
     } else {
       Debug::print("failed, rc=");
       Debug::print(psClient.state());
       Debug::println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
-      delay(5000);
+      //delay(5000);
+      return psClient.connected();
     }
 }
 
 void connectWiFi() {
   Debug::print("Attempting to connect to SSID: ");
-  Debug::print(SECRET_SSID);
+  Debug::print(networkSSID);
   Debug::print(" ");
 
-  while (WiFi.begin(SECRET_SSID, SECRET_PASS) != WL_CONNECTED) {
+  while (WiFi.begin(networkSSID, networkPASSWORD) != WL_CONNECTED) {
     // failed, retry
     Debug::print(".");
     delay(5000);

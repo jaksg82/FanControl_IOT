@@ -17,23 +17,23 @@
 
 class LcdPages {
   private:
-    byte _totalPages = 4;
-	byte _actualPage = 0;
-	byte _t0 = 0;
-    byte _h0 = 0;
-    byte _t1 = 0;
-    byte _h1 = 0;
-    byte _tmin = 0;
-    byte _tmax = 0;
-	byte _ttemp = 0;
-	byte _fanPerc = 0;
-	bool _isOff = true;
-	//  16 chars   0000000000111111  
-	//             0123456789012345
-    String p0_0 = "T0:   ° T1:   ° ";
-	String p0_1 = "Fan:    %   ON  ";
-	String p1_0 = "Temperatures    ";
-    String p1_1 = "Min:  ° Max:  ° ";
+  byte _totalPages = 4;
+  byte _actualPage = 0;
+  byte _t0 = 0;
+  byte _h0 = 0;
+  byte _t1 = 0;
+  byte _h1 = 0;
+  byte _tmin = 0;
+  byte _tmax = 0;
+  byte _ttemp = 0;
+  byte _fanPerc = 0;
+  bool _isOff = true;
+  //  16 chars   0000000000111111  
+  //             0123456789012345
+  char p0_0[20] = "T0:   ° T1:   ° ";
+	char p0_1[20] = "Fan:    %   ON  ";
+	char p1_0[20] = "Temperatures    ";
+  char p1_1[20] = "Min:  ° Max:  ° ";
 	bool _isEditPage = false;
 
 	// pointer to the lcd display class

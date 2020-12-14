@@ -18,6 +18,11 @@ public:
 		}
 	}
 
+  static void println() {
+    if (Serial) {
+      Serial.println();
+    }
+  }
 
 };
 
