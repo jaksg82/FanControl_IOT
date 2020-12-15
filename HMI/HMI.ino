@@ -4,13 +4,17 @@
 #include <WiFiNINA.h>
 #include <PubSubClient.h>
 //#include <SSLClient.h>
+#include <Arduino.h>
+#include <LiquidCrystalIO.h>
+#include <IoAbstractionWire.h>
+#include <Wire.h>
 
 /* Local headers */
 #include "Debug.h"
 #include "pinConfig.h"
 #include "priv/credentials.h"
 //#include "priv/certificates.h"  // Needed for the SSL connection
-
+#include "LcdPages.h"
 
 // Update these with values suitable for your network.
 
@@ -51,28 +55,40 @@ String LcdTarget = "";
 String DebugDHT = "";
 bool LcdNeedUpdate = true;
 
-
-// Initialize all the libraries.
-//Adafruit_LiquidCrystal lcd(Lcd_RS, Lcd_Enable, Lcd_D4, Lcd_D5, Lcd_D6, Lcd_D7);
+LiquidCrystalI2C_RS_EN(lcd, 0x27, false)
 
 /* Custom LCD Characters */
-const byte degCelsius[] = {B11000, B11000, B00111, B01000, B01000, B01000, B01000, B00111};
-const byte usbChar[] = {B00100, B01110, B00100, B10101, B10101, B01101, B00110, B00100};
+//const byte degCelsius[] = {B11000, B11000, B00111, B01000, B01000, B01000, B01000, B00111};
+//const byte usbChar[] = {B00100, B01110, B00100, B10101, B10101, B01101, B00110, B00100};
 
 void setup()
 {
+  delay(2000);
+  Debug::println("Starting.......");
+  
   // Setup LCD and display a message
-
+  lcd.configureBacklightPin(3);
+  lcd.backlight();
+  Wire.begin();
+  lcd.begin(16, 2);
+  lcd.print("hello over i2c!");
+  lcd.noBacklight();
+  delay(1000);
+  lcd.backlight();
+  LcdPages lpg(lcd);
+  Debug::println("-> LCD configured");
+  
   // MQTT Setup
   psClient.setServer(mqttSERVER, mqttPORT);
   psClient.setCallback(callback);
-
+  Debug::println("-> MQTT configured");
+  
   // Pin setup
   // pinMode(BTN_UP, INPUT_PULLUP);
   // pinMode(BTN_DOWN, INPUT_PULLUP);
   // pinMode(BTN_CANC, INPUT_PULLUP);
   // pinMode(BTN_OK, INPUT_PULLUP);
-
+  Debug::println("-> Buttons configured");
 
   //prevPwm = millis();
   //prevDht = prevPwm;
@@ -80,12 +96,13 @@ void setup()
 
   //Wire.begin();
   Serial1.begin(57600);
+  Debug::println("-> Serial1 started");
   
   // Allow the hardware to sort itself out
   delay(1500);
   lastReconnectAttempt = 0;
   lastTopicPublish = 0;
-
+  Debug::println("Ready!");
 }
 
 void loop()
@@ -94,20 +111,13 @@ void loop()
 
   // Check i2c connection
   if (nowSensors - prevI2C > 2000) {
-    // Request update
-//    Wire.beginTransmission(1);
-//    Wire.write("GETSTS");
-//    Debug::println("GETSTS");
-//    Wire.endTransmission();
-    Wire.requestFrom(1, 20);
-    delay(100);
-    while(Wire.available()) {
-      byte c = Wire.read();
+    while(Serial1.available()) {
+      char c = Serial1.read();
       Debug::print(c);
-      Debug::print('|');
     }
-    Debug::println();
+    //Debug::println();
     prevI2C = nowSensors;
+    //lcd.updateLcd();
   }
 
   // Check WiFi Connection
@@ -135,7 +145,7 @@ void loop()
 //      s0string.toCharArray(s0chars, s0string.length()+1);
       psClient.publish("qiot/things/simone/NanoIOT/sensor0", "{actual: 25}");
 //      Debug::println("Sensor 0 Publish");
-//      Debug::print("qiot/things/simone/NanoIOT/sensor0");
+      Debug::println("qiot/things/simone/NanoIOT/sensor0");
 //      Debug::println(s0chars);
 
     }

@@ -5,13 +5,44 @@
 // Constructor and Destructor
 //----------------------------------------------------------------
 LcdPages::LcdPages(LiquidCrystal& lcd) {
-  this->_lcd = &lcd;
+  _lcd = &lcd;
+  LcdPages::degreeFix();
+  LcdPages::updateLcd();
 }
+LcdPages::LcdPages(LiquidCrystal& lcd, uint8_t cols, uint8_t rows) {
+  _lcd = &lcd;
+  this->_cols = cols;
+  this->_rows = rows;
+  _lcd->begin(cols, rows);
+  LcdPages::degreeFix();
+  LcdPages::updateLcd();
+}
+//LcdPages::LcdPages(uint8_t address, uint8_t cols, uint8_t rows) {
+//  LiquidCrystalI2C_RS_EN(_lcd, address, false)
+//  // for i2c variants, this must be called first.
+//  Wire.begin();
+//  // set up the LCD's number of columns and rows, must be called.
+//  this->_cols = cols;
+//  this->_rows = rows;
+//  _lcd->begin(cols, rows);
+//  LcdPages::updateLcd();
+//}
 
 
 //----------------------------------------------------------------
 // Private String updaters
 //----------------------------------------------------------------
+void LcdPages::degreeFix() {
+  this->p0_0[6] = 0xDF;
+  this->p0_0[7] = ' ';
+  this->p0_0[14] = 0xDF;
+  this->p0_0[15] = ' ';
+  this->p1_1[6] = 0xDF;
+  this->p1_1[7] = ' ';
+  this->p1_1[14] = 0xDF;
+  this->p1_1[15] = ' ';
+}
+
 void LcdPages::changeActualTempString() {
 	// Temperature Sensor 0
 	char t0c[4]{};

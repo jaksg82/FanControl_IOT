@@ -28,18 +28,20 @@ class LcdPages {
   byte _ttemp = 0;
   byte _fanPerc = 0;
   bool _isOff = true;
-  //  16 chars   0000000000111111  
-  //             0123456789012345
-  char p0_0[20] = "T0:   ° T1:   ° ";
+  //  16 chars     0000000000111111  
+  //               0123456789012345
+  char p0_0[20] = "T0:     T1:     ";
 	char p0_1[20] = "Fan:    %   ON  ";
 	char p1_0[20] = "Temperatures    ";
-  char p1_1[20] = "Min:  ° Max:  ° ";
+  char p1_1[20] = "Min:    Max:    ";
 	bool _isEditPage = false;
-
-	// pointer to the lcd display class
+  
+	// lcd display class
 	LiquidCrystal* _lcd;
+  uint8_t _address, _cols, _rows;
 	
 	// String updaters
+  void degreeFix();
 	void changeActualTempString();
 	void changeFanString();
 	void changeTempRangeString();
@@ -51,6 +53,8 @@ class LcdPages {
   public:
     // Constructor
     LcdPages(LiquidCrystal& lcd);
+    LcdPages(LiquidCrystal& lcd, uint8_t cols, uint8_t rows);
+    //LcdPages(uint8_t address, uint8_t cols, uint8_t rows);
 		
 	// Inputs
 	void updateTemperatureRange(byte tmin, byte tmax);

@@ -196,6 +196,7 @@ void loop()
     outstr = outstr + rpm0 + "," + ticks0 + ",";
     outstr = outstr + freeMemory() + ";";
     Serial1.println(outstr);
+    Debug::println(outstr);
   }
 
   //------------------------------------------------------------
