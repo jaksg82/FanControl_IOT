@@ -5,11 +5,16 @@
 //#include <Wire.h>
 
 /* Local headers */
-#include "pinConfig.h"
 #include "timer4settings.h"
 #include "Debug.h"
 #include "eepromUtil.h"
 #include "MemoryFree.h"
+
+/*        Pinouts       */
+const int RPM_IN = 3;        // RPM input pin on interrupt0
+const int RELAY = 9;         // Relay output pin
+const int TEMP1_IN = 20;     // Temperature sensor input pin
+const int TEMP2_IN = 21;     // Temperature sensor input pin
 
 /* PWM calculations */
 double duty;                    // The actual pwm value

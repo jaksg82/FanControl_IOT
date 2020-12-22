@@ -1,6 +1,7 @@
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef DEBUG_H_DEFINED
+#define DEBUG_H_DEFINED
 
+#include <HardwareSerial.h>
 
 class Debug {
 public:

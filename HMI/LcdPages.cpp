@@ -4,19 +4,30 @@
 //----------------------------------------------------------------
 // Constructor and Destructor
 //----------------------------------------------------------------
-LcdPages::LcdPages(LiquidCrystal& lcd) {
-  _lcd = &lcd;
-  LcdPages::degreeFix();
-  LcdPages::updateLcd();
+LcdPages::LcdPages() {
+  //_lcd = &lcd;
+  degreeFix();
+  //updateLcd();
 }
-LcdPages::LcdPages(LiquidCrystal& lcd, uint8_t cols, uint8_t rows) {
+LcdPages::LcdPages(LiquidCrystal_PCF8574_Mod& lcd) {
   _lcd = &lcd;
-  this->_cols = cols;
-  this->_rows = rows;
-  _lcd->begin(cols, rows);
-  LcdPages::degreeFix();
-  LcdPages::updateLcd();
+  isAttached = true;
+  degreeFix();
+  updateLcd();
 }
+//LcdPages::LcdPages(LiquidCrystal& lcd) {
+//  _lcd = &lcd;
+//  LcdPages::degreeFix();
+//  LcdPages::updateLcd();
+//}
+//LcdPages::LcdPages(LiquidCrystal& lcd, uint8_t cols, uint8_t rows) {
+//  _lcd = &lcd;
+//  this->_cols = cols;
+//  this->_rows = rows;
+//  _lcd->begin(cols, rows);
+//  LcdPages::degreeFix();
+//  LcdPages::updateLcd();
+//}
 //LcdPages::LcdPages(uint8_t address, uint8_t cols, uint8_t rows) {
 //  LiquidCrystalI2C_RS_EN(_lcd, address, false)
 //  // for i2c variants, this must be called first.
@@ -27,6 +38,14 @@ LcdPages::LcdPages(LiquidCrystal& lcd, uint8_t cols, uint8_t rows) {
 //  _lcd->begin(cols, rows);
 //  LcdPages::updateLcd();
 //}
+
+/* The write function is needed for derivation from the Print class. */
+inline size_t LcdPages::write(uint8_t ch)
+{
+  //_send(ch, true);
+  _lcd->write(ch);
+  return 1; // assume sucess
+} // write()
 
 
 //----------------------------------------------------------------
@@ -45,27 +64,42 @@ void LcdPages::degreeFix() {
 
 void LcdPages::changeActualTempString() {
 	// Temperature Sensor 0
-	char t0c[4]{};
-    sprintf(t0c, "%3d", this->_t0);
-	this->p0_0[3] = t0c[1];
-	this->p0_0[4] = t0c[2];
-	this->p0_0[5] = t0c[3];
+	char t0c[4]{' ',' ',' ',' '};
+  sprintf(t0c, "%4d", this->_t0);
+  char t0c0 = t0c[0];
+  char t0c1 = t0c[1];
+  char t0c2 = t0c[2];
+  char t0c3 = t0c[3];
+	this->p0_0[3] = t0c1;
+	this->p0_0[4] = t0c2;
+	this->p0_0[5] = t0c3;
 
 	// Temperature Sensor 1
 	char t1c[4]{};
-	sprintf(t1c, "%3d", this->_t1);
-	this->p0_0[11] = t1c[1];
-	this->p0_0[12] = t1c[2];
-	this->p0_0[13] = t1c[3];
+	sprintf(t1c, "%4d", this->_t1);
+  char t1c0 = t1c[0];
+  char t1c1 = t1c[1];
+  char t1c2 = t1c[2];
+  char t1c3 = t1c[3];
+	this->p0_0[11] = t1c1;
+	this->p0_0[12] = t1c2;
+	this->p0_0[13] = t1c3;
+
+  //Check what page is active
+  if (this->_actualPage == 0) { updateLcd(); }
 }
 
 void LcdPages::changeFanString() {
 	// Fan Duty Percentage
 	char fanc[4]{};
-    sprintf(fanc, "%3d", this->_fanPerc);
-	this->p0_1[5] = fanc[1];
-	this->p0_1[6] = fanc[2];
-	this->p0_1[7] = fanc[3];
+  sprintf(fanc, "%4d", this->_fanPerc);
+  char c0 = fanc[0];
+  char c1 = fanc[1];
+  char c2 = fanc[2];
+  char c3 = fanc[3];
+	this->p0_1[5] = c1;
+	this->p0_1[6] = c2;
+	this->p0_1[7] = c3;
 
 	if (_isOff) {
 		this->p0_1[11] = 'O';
@@ -76,70 +110,99 @@ void LcdPages::changeFanString() {
 		this->p0_1[12] = 'N';
 		this->p0_1[13] = ' ';
 	}
+  //Check what page is active
+  if (this->_actualPage == 0) { updateLcd(); }
 }
+
 void LcdPages::changeTempRangeString() {
 	// MIN Temperature
 	char mint[4]{};
-	sprintf(mint, "%3d", this->_tmin);
-	this->p1_1[4] = mint[2];
-	this->p1_1[5] = mint[3];
+	sprintf(mint, "%4d", this->_tmin);
+  char c0 = mint[0];
+  char c1 = mint[1];
+  char c2 = mint[2];
+  char c3 = mint[3];
+	this->p1_1[4] = c2;
+	this->p1_1[5] = c3;
 
 	// MAX Temperature
 	char maxt[4]{};
-	sprintf(maxt, "%3d", this->_tmax);
-	this->p1_1[12] = maxt[2];
-	this->p1_1[13] = maxt[3];
+	sprintf(maxt, "%4d", this->_tmax);
+  char c0x = maxt[0];
+  char c1x = maxt[1];
+  char c2x = maxt[2];
+  char c3x = maxt[3];
+	this->p1_1[12] = c2x;
+	this->p1_1[13] = c3x;
+
+  //Check what page is active
+  if (this->_actualPage == 1) { updateLcd(); }
 }
 
 void LcdPages::changeTempRangeString(byte tmin, byte tmax) {
 	// MIN Temperature
 	char mint[4]{};
-	sprintf(mint, "%3d", tmin);
+	sprintf(mint, "%4d", tmin);
+  char c0 = mint[0];
+  char c1 = mint[1];
+  char c2 = mint[2];
+  char c3 = mint[3];
 	this->p1_1[4] = mint[2];
 	this->p1_1[5] = mint[3];
 
 	// MAX Temperature
 	char maxt[4]{};
-	sprintf(maxt, "%3d", tmax);
-	this->p1_1[12] = maxt[2];
-	this->p1_1[13] = maxt[3];
+	sprintf(maxt, "%4d", tmax);
+  char c0x = maxt[0];
+  char c1x = maxt[1];
+  char c2x = maxt[2];
+  char c3x = maxt[3];
+	this->p1_1[12] = c2x;
+	this->p1_1[13] = c3x;
+
+  updateLcd();
 }
 
 //----------------------------------------------------------------
 // Private LCD updaters
 //----------------------------------------------------------------
 bool LcdPages::updateLcd() {
-	this->_lcd->clear();
-	switch (this->_actualPage) {
-	case 0: // Status page
-		_lcd->noBlink();
-		_lcd->setCursor(0, 0);
-		_lcd->print(this->p0_0);
-		_lcd->setCursor(0, 1);
-		_lcd->print(this->p0_1);
-		break;
-	case 1: // Temperature range view
-		_lcd->noBlink();
-		_lcd->setCursor(0, 0);
-		_lcd->print(this->p1_0);
-		_lcd->setCursor(0, 1);
-		_lcd->print(this->p1_1);
-		break;
-	case 2: // Temperature MIN Edit
-		_lcd->setCursor(0, 0);
-		_lcd->print(this->p1_0);
-		_lcd->setCursor(0, 1);
-		_lcd->print(this->p1_1);
-		_lcd->setCursor(5, 1);
-		_lcd->blink();
-	case 3: // Temperature MAX Edit
-		_lcd->setCursor(0, 0);
-		_lcd->print(this->p1_0);
-		_lcd->setCursor(0, 1);
-		_lcd->print(this->p1_1);
-		_lcd->setCursor(13, 1);
-		_lcd->blink();
-	}
+  if (isAttached) {
+  	this->_lcd->clear();
+	  switch (this->_actualPage) {
+	  case 0: // Status page
+  		this->_lcd->noBlink();
+	  	this->_lcd->setCursor(0, 0);
+		  this->_lcd->print(this->p0_0);
+  		this->_lcd->setCursor(0, 1);
+  		this->_lcd->print(this->p0_1);
+  		break;
+  	case 1: // Temperature range view
+  		this->_lcd->noBlink();
+  		this->_lcd->setCursor(0, 0);
+  		this->_lcd->print(this->p1_0);
+  		this->_lcd->setCursor(0, 1);
+  		this->_lcd->print(this->p1_1);
+  		break;
+  	case 2: // Temperature MIN Edit
+  		this->_lcd->setCursor(0, 0);
+  		this->_lcd->print(this->p1_0);
+  		this->_lcd->setCursor(0, 1);
+  		this->_lcd->print(this->p1_1);
+  		this->_lcd->setCursor(5, 1);
+  		this->_lcd->blink();
+  	case 3: // Temperature MAX Edit
+  		this->_lcd->setCursor(0, 0);
+  		this->_lcd->print(this->p1_0);
+	  	this->_lcd->setCursor(0, 1);
+  		this->_lcd->print(this->p1_1);
+  		this->_lcd->setCursor(13, 1);
+  		this->_lcd->blink();
+  	}
+    return true;
+  } else {
+    return false;
+  }
 }
 
 
@@ -149,13 +212,13 @@ bool LcdPages::updateLcd() {
 void LcdPages::updateTemperatureRange(byte tmin, byte tmax) {
 	this->_tmin = tmin;
 	this->_tmax = tmax;
-	changeTempRangeString();
+	this->changeTempRangeString();
 }
 
 void LcdPages::updateSensorValues(byte t0, byte t1) {
 	this->_t0 = t0;
 	this->_t1 = t1;
-	changeActualTempString();
+	this->changeActualTempString();
 }
 
 void LcdPages::updateSensorValues(byte t0, byte h0, byte t1, byte h1) {
@@ -163,13 +226,13 @@ void LcdPages::updateSensorValues(byte t0, byte h0, byte t1, byte h1) {
 	this->_h1 = h1;
 	this->_t0 = t0;
 	this->_t1 = t1;
-	changeActualTempString();
+	this->changeActualTempString();
 }
 
 void LcdPages::updateFanStatus(byte fanPerc, bool isOff) {
 	this->_fanPerc = fanPerc;
 	this->_isOff = isOff;
-	changeFanString();
+	this->changeFanString();
 }
 
 //----------------------------------------------------------------
