@@ -3,6 +3,7 @@
 #include <EEPROM.h>
 #include <SimpleRelay.h>
 //#include <Wire.h>
+//#include <stdio.h>
 
 /* Local headers */
 #include "timer4settings.h"
@@ -193,15 +194,23 @@ void loop()
   {
     prevUart = cur;
     byte fanPerc = (duty / 255) * 100;
-    String outstr = "$STAT,";
-    outstr = outstr + Temperature1 + "," + Humidity1 + ",";
-    outstr = outstr + Temperature2 + "," + Humidity2 + ",";
-    outstr = outstr + TargetTempMin + "," + TargetTempMax + ",";
-    outstr = outstr + fanPerc + "," + (fanRelay.isRelayOn() ? "Y" : "N") + ",";
-    outstr = outstr + rpm0 + "," + ticks0 + ",";
-    outstr = outstr + freeMemory() + ";";
-    Serial1.println(outstr);
-    Debug::println(outstr);
+    Serial1.print("$STAT,");
+    Debug::print("$STAT,");
+    ByteToHex(Temperature1);
+    ByteToHex(Humidity1);
+    ByteToHex(Temperature2);
+    ByteToHex(Humidity2);
+    ByteToHex(TargetTempMin);
+    ByteToHex(TargetTempMax);
+    ByteToHex(fanPerc);
+    Serial1.print(fanRelay.isRelayOn() ? "Y" : "N");
+    Debug::print(fanRelay.isRelayOn() ? "Y" : "N");
+    Int16ToHex(rpm0);
+    IntToHex(freeMemory());
+    Serial1.print(";");
+    Debug::print(";");
+    //Debug::println(sizeof(rpm0));
+    
   }
 
   //------------------------------------------------------------
@@ -218,77 +227,41 @@ void loop()
 }
 
 //---------------------------------------------------------------------------------------
-// i2c comm functions
+// Format string functions
 //---------------------------------------------------------------------------------------
-//void sendAnswer(bool isRange = false) {
-//void sendAnswer() {
-//    if (isRange) { // Send Temperature range message
-//        responseMsg[0] = 'R';
-//        responseMsg[1] = 'N';
-//        responseMsg[2] = 'G';
-//        responseMsg[3] = TargetTempMin;
-//        responseMsg[4] = TargetTempMax;
-//        responseMsg[5] = '$';
-//        responseMsg[6] = '$';
-//        responseMsg[7] = '$';
-//        responseMsg[8] = '$';
-//        responseMsg[9] = '$';
-//        responseMsg[10] = '$';
-//    }
-//    else {         // Send Status message
-//        byte fanPerc = (duty / 255) * 100;
-//		    int ram = freeMemory();
-//        responseMsg[0] = 'S';
-//        responseMsg[1] = 'T';
-//        responseMsg[2] = 'S';
-//        responseMsg[3] = Temperature1;
-//        responseMsg[4] = Humidity1;
-//        responseMsg[5] = Temperature2;
-//        responseMsg[6] = Humidity2;
-//        responseMsg[7] = fanPerc;
-//        responseMsg[8] = fanRelay.isRelayOn();
-//        responseMsg[9] = (ram >> 8) & 0xFF;
-//        responseMsg[10] = ram & 0xFF;
-//    }
-//    Wire.write(responseMsg, ResponseSize);
-//    for (int i = 0; i < ResponseSize; i++) {
-//      Debug::print(responseMsg[i]);
-//    }
-//    Debug::println();
-//}
-//
-//void readRequest() {
-//    Debug::print("Message: ");
-//    for (int i = 0; i < RequestSize; i++) {
-//        requestMsg[i] = Wire.read();
-//        Debug::print(requestMsg[i]);
-//    }
-//    Debug::println();
-//    // Parse the message for the specific request
-//    if (requestMsg[0] == 'S') {          // Set messages
-//        if (requestMsg[3] == 'T') {      // Set temperature range
-//            byte tmin = EepromUtil::FitInTemp(requestMsg[4]);
-//            byte tmax = EepromUtil::FitInTemp(requestMsg[5]);
-//            if (EepromUtil::isTargetValid(tmin, tmax)) {
-//                if (TargetTempMin != tmin || TargetTempMax != tmax) {
-//                    TargetTempMin = tmin;
-//                    TargetTempMax = tmax;
-//                    EepromUtil::SetConfigToEeprom(&TargetTempMin, &TargetTempMax);
-//                }
-//            }
-//            //sendAnswer(true);            // Send back the range value accepted
-//        }
-//    }
-//    else if (requestMsg[0] == 'G') {     // Get messages
-//        if (requestMsg[3] == 'S') {      // Get status message
-//            sendAnswer();                // Reply with the status message
-//        }
-//        else if (requestMsg[3] == 'R') {
-//            //sendAnswer(true);            // Reply with the range message
-//        }
-//    }
-//}
+void ByteToHex(byte value) {
+  char valChars[2]{};
+  sprintf(valChars, "%.2X", value);
+  Serial1.print(valChars);
+  Debug::print(valChars);
+}
 
+void Int16ToHex(int16_t value) {
+  char valChars[4]{};
+  sprintf(valChars, "%.4X", value);
+  Serial1.print(valChars);
+  Debug::print(valChars);
+}
+void IntToHex(int value) {
+  char valChars[4]{};
+  sprintf(valChars, "%.4X", value);
+  Serial1.print(valChars);
+  Debug::print(valChars);
+}
+
+void UInt16ToHex(uint16_t value) {
+  char valChars[4]{};
+  sprintf(valChars, "%.4X", value);
+  Serial1.print(valChars);
+  Debug::print(valChars);
+}
+
+void Int32ToHex(int32_t value) {
+  char valChars[8]{};
+  sprintf(valChars, "%.8X", value);
+  Serial1.print(valChars);
+  Debug::print(valChars);
+}
 
 //---------------------------------------------------------------------------------------
 // Temperature sensor functions

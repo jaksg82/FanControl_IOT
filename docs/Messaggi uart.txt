@@ -1,0 +1,27 @@
+Request messages:
+
+$GETSTS;        Get status
+$GETRNG;        Get temperature range
+
+$SET####;       Set temperature range values
+                chars 5-6  ->  TargetTempMin
+                chars 7-8  ->  TargetTempMax
+
+
+Response messages:
+Fixed width version 1
+0000000000111111111122222222223333333333
+0123456789012345678901234567890123456789
+$STAT,AABBCCDDEEFFGGHIIIIJJJJ;
+$STAT,                              -> Header
+      AA                            -> Sensor 0 Temperature
+        BB                          -> Sensor 0 Humidity
+          CC                        -> Sensor 1 Temperature
+            DD                      -> Sensor 1 Humidity
+              EE                    -> Temperature Range Minimum
+                FF                  -> Temperature Range Maximum
+                  GG                -> Fan PWM Percentage
+                    H               -> Fan Relay Status: 0=Off 1=On
+                     IIII           -> Rpm of Fan
+                         JJJJ       -> Free RAM
+                             ;      -> Closing character
