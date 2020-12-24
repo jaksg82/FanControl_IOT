@@ -64,7 +64,7 @@ void LcdPages::degreeFix() {
 
 void LcdPages::changeActualTempString() {
 	// Temperature Sensor 0
-	char t0c[4]{' ',' ',' ',' '};
+	char t0c[4]{};
   sprintf(t0c, "%4d", this->_t0);
   char t0c0 = t0c[0];
   char t0c1 = t0c[1];
@@ -101,14 +101,14 @@ void LcdPages::changeFanString() {
 	this->p0_1[6] = c2;
 	this->p0_1[7] = c3;
 
-	if (_isOff) {
-		this->p0_1[11] = 'O';
-		this->p0_1[12] = 'F';
-		this->p0_1[13] = 'F';
-	} else {
+	if (_isOn) {
 		this->p0_1[11] = 'O';
 		this->p0_1[12] = 'N';
 		this->p0_1[13] = ' ';
+	} else {
+		this->p0_1[11] = 'O';
+		this->p0_1[12] = 'F';
+		this->p0_1[13] = 'F';
 	}
   //Check what page is active
   if (this->_actualPage == 0) { updateLcd(); }
@@ -210,29 +210,37 @@ bool LcdPages::updateLcd() {
 // Public Value updaters
 //----------------------------------------------------------------
 void LcdPages::updateTemperatureRange(byte tmin, byte tmax) {
-	this->_tmin = tmin;
-	this->_tmax = tmax;
-	this->changeTempRangeString();
+  if (this->_tmin != tmin || this->_tmax != tmax){
+    this->_tmin = tmin;
+    this->_tmax = tmax;
+    this->changeTempRangeString();
+  }
 }
 
 void LcdPages::updateSensorValues(byte t0, byte t1) {
-	this->_t0 = t0;
-	this->_t1 = t1;
-	this->changeActualTempString();
+  if (this->_t0 != t0 || this->_t1 != t1) {
+	  this->_t0 = t0;
+	  this->_t1 = t1;
+	  this->changeActualTempString();
+  }
 }
 
 void LcdPages::updateSensorValues(byte t0, byte h0, byte t1, byte h1) {
-	this->_h0 = h0;
-	this->_h1 = h1;
-	this->_t0 = t0;
-	this->_t1 = t1;
-	this->changeActualTempString();
+  this->_h0 = h0;
+  this->_h1 = h1;
+  if (this->_t0 != t0 || this->_t1 != t1) {
+    this->_t0 = t0;
+    this->_t1 = t1;
+    this->changeActualTempString();
+  }
 }
 
-void LcdPages::updateFanStatus(byte fanPerc, bool isOff) {
-	this->_fanPerc = fanPerc;
-	this->_isOff = isOff;
-	this->changeFanString();
+void LcdPages::updateFanStatus(byte fanPerc, bool isOn) {
+  if (this->_fanPerc != fanPerc || this->_isOn != isOn) {
+    this->_fanPerc = fanPerc;
+    this->_isOn = isOn;
+    this->changeFanString();
+  }
 }
 
 //----------------------------------------------------------------

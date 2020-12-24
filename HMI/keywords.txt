@@ -1,0 +1,104 @@
+#######################################
+# HMI
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SensorsHandler	KEYWORD1
+LiquidCrystal_PCF8574_Mod	KEYWORD1
+LcdPages	KEYWORD1
+
+#######################################
+# SensorsHandler Methods and Functions (KEYWORD2)
+#######################################
+
+fromUartMessage	KEYWORD2
+toChars	KEYWORD2
+setTotalMemory0	KEYWORD2
+setTotalMemory1	KEYWORD2
+setUsedMemory0	KEYWORD2
+setUsedMemory1	KEYWORD2
+sensor0message	KEYWORD2
+sensor1message	KEYWORD2
+fan0message	KEYWORD2
+fan1message	KEYWORD2
+rangeTmessage	KEYWORD2
+memory0message	KEYWORD2
+memory1message	KEYWORD2
+parseHex8	KEYWORD2
+parseHex16	KEYWORD2
+
+#######################################
+# LiquidCrystal_PCF8574_Mod Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+clear	KEYWORD2
+home	KEYWORD2
+noDisplay	KEYWORD2
+display	KEYWORD2
+noBlink	KEYWORD2
+blink	KEYWORD2
+noCursor	KEYWORD2
+cursor	KEYWORD2
+scrollDisplayLeft	KEYWORD2
+scrollDisplayRight	KEYWORD2
+leftToRight	KEYWORD2
+rightToLeft	KEYWORD2
+autoscroll	KEYWORD2
+noAutoscroll	KEYWORD2
+setBacklight	KEYWORD2
+createChar	KEYWORD2
+setCursor	KEYWORD2
+write	KEYWORD2
+
+#######################################
+# LcdPages Methods and Functions (KEYWORD2)
+#######################################
+
+updateTemperatureRange	KEYWORD2
+updateSensorValues	KEYWORD2
+updateFanStatus	KEYWORD2
+buttonPressed	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+LCD_CLEARDISPLAY	LITERAL1
+LCD_RETURNHOME	LITERAL1
+LCD_ENTRYMODESET	LITERAL1
+LCD_DISPLAYCONTROL	LITERAL1
+LCD_CURSORSHIFT	LITERAL1 
+LCD_FUNCTIONSET	LITERAL1
+LCD_SETCGRAMADDR	LITERAL1
+LCD_SETDDRAMADDR	LITERAL1
+LCD_ENTRYRIGHT	LITERAL1
+LCD_ENTRYLEFT	LITERAL1
+LCD_ENTRYSHIFTINCREMENT	LITERAL1
+LCD_ENTRYSHIFTDECREMENT	LITERAL1
+LCD_DISPLAYON	LITERAL1
+LCD_DISPLAYOFF	LITERAL1
+LCD_CURSORON	LITERAL1
+LCD_CURSOROFF	LITERAL1
+LCD_BLINKON	LITERAL1
+LCD_BLINKOFF	LITERAL1
+LCD_DISPLAYMOVE	LITERAL1
+LCD_CURSORMOVE	LITERAL1
+LCD_MOVERIGHT	LITERAL1
+LCD_MOVELEFT	LITERAL1
+LCD_8BITMODE	LITERAL1
+LCD_4BITMODE	LITERAL1
+LCD_2LINE	LITERAL1
+LCD_1LINE	LITERAL1
+LCD_5x10DOTS	LITERAL1
+LCD_5x8DOTS	LITERAL1
+
+BUTTON_UP	LITERAL1
+BUTTON_DOWN	LITERAL1
+BUTTON_OK	LITERAL1
+BUTTON_CANC	LITERAL1
+
+

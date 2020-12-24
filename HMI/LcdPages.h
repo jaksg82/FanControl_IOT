@@ -20,7 +20,7 @@
 
 class LcdPages : public Print {
   private:
-  byte _totalPages = 4;
+  //byte _totalPages = 4;
   byte _actualPage = 0;
   byte _t0 = 0;
   byte _h0 = 0;
@@ -30,7 +30,7 @@ class LcdPages : public Print {
   byte _tmax = 0;
   byte _ttemp = 0;
   byte _fanPerc = 0;
-  bool _isOff = true;
+  bool _isOn = false;
   //  16 chars     0000000000111111  
   //               0123456789012345
   char p0_0[20] = "T0:     T1:     ";
@@ -67,7 +67,7 @@ class LcdPages : public Print {
 	void updateTemperatureRange(byte tmin, byte tmax);
 	void updateSensorValues(byte t0, byte t1);
 	void updateSensorValues(byte t0, byte h0, byte t1, byte h1);
-	void updateFanStatus(byte fanPerc, bool isOff);
+	void updateFanStatus(byte fanPerc, bool isOn);
 	
 	// Page handling
 	bool buttonPressed(byte btn);

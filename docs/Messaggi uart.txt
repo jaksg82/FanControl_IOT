@@ -13,15 +13,15 @@ Fixed width version 1
 0000000000111111111122222222223333333333
 0123456789012345678901234567890123456789
 $STAT,AABBCCDDEEFFGGHIIIIJJJJ;
-$STAT,                              -> Header
-      AA                            -> Sensor 0 Temperature
-        BB                          -> Sensor 0 Humidity
-          CC                        -> Sensor 1 Temperature
-            DD                      -> Sensor 1 Humidity
-              EE                    -> Temperature Range Minimum
-                FF                  -> Temperature Range Maximum
-                  GG                -> Fan PWM Percentage
-                    H               -> Fan Relay Status: 0=Off 1=On
-                     IIII           -> Rpm of Fan
-                         JJJJ       -> Free RAM
-                             ;      -> Closing character
+$STAT,                              -> 0-5   Header
+      AA                            -> 6-7   Sensor 0 Temperature
+        BB                          -> 8-9   Sensor 0 Humidity
+          CC                        -> 10-11 Sensor 1 Temperature
+            DD                      -> 12-13 Sensor 1 Humidity
+              EE                    -> 14-15 Temperature Range Minimum
+                FF                  -> 16-17 Temperature Range Maximum
+                  GG                -> 18-19 Fan PWM Percentage
+                    H               -> 20    Fan Relay Status: 0=Off 1=On
+                     IIII           -> 21-24 Rpm of Fan
+                         JJJJ       -> 25-28 Free RAM
+                             ;      -> 29    Closing character
