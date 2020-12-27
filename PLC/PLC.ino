@@ -1,15 +1,28 @@
-/* Arduino libraries */
+
+//---------------------------------------------------------------------------------------------------
+// Arduino libraries
+//---------------------------------------------------------------------------------------------------
 #include <SimpleDHT.h>
 #include <EEPROM.h>
 #include <SimpleRelay.h>
 //#include <Wire.h>
 //#include <stdio.h>
+#include <CircularBuffer.h>
+#include <MemoryUsage.h>
 
-/* Local headers */
+//---------------------------------------------------------------------------------------------------
+// Declare functions
+//---------------------------------------------------------------------------------------------------
+float t0avg();
+float t1avg();
+
+//---------------------------------------------------------------------------------------------------
+// Local headers
+//---------------------------------------------------------------------------------------------------
 #include "timer4settings.h"
 #include "Debug.h"
 #include "eepromUtil.h"
-#include "MemoryFree.h"
+//#include "MemoryFree.h"
 
 /*        Pinouts       */
 const int RPM_IN = 3;        // RPM input pin on interrupt0
@@ -31,6 +44,7 @@ void pickRpm0() {
 /* Uart Comm Configs */
 const byte RequestSize = 6;
 byte requestMsg[RequestSize] {};
+CircularBuffer<char,50> msgBuff;
 
 /* Tells the amount of time (in ms) to wait between updates */
 const int PWM_SAMPLETIME = 2000;
@@ -47,8 +61,10 @@ byte Humidity1 = 0;
 byte Humidity2 = 0;
 byte TargetTempMin = 25;
 byte TargetTempMax = 35;
-byte t0series[5] {0, 0, 0, 0, 0};
-byte t1series[5] {0, 0, 0, 0, 0};
+//byte t0series[5] {0, 0, 0, 0, 0};
+//byte t1series[5] {0, 0, 0, 0, 0};
+CircularBuffer<byte,5> t0buff;
+CircularBuffer<byte,5> t1buff;
 
 // Initialize all the libraries.
 SimpleDHT11 sensor1(TEMP1_IN), sensor2(TEMP2_IN);
@@ -59,6 +75,7 @@ SimpleRelay fanRelay = SimpleRelay(RELAY);
 //-------------------------------------------------------------------------------
 void setup()
 {
+  delay(1000);
   // Configure the clock on Timer 4
   pwm6configure();
 
@@ -77,16 +94,18 @@ void setup()
   Debug::println("Sensor...");
   GetSensorData(&sensor1, &Temperature1, &Humidity1);
   GetSensorData(&sensor2, &Temperature2, &Humidity2);
-  t0series[0] = Temperature1;
-  t0series[1] = Temperature1;
-  t0series[2] = Temperature1;
-  t0series[3] = Temperature1;
-  t0series[4] = Temperature1;
-  t1series[0] = Temperature2;
-  t1series[1] = Temperature2;
-  t1series[2] = Temperature2;
-  t1series[3] = Temperature2;
-  t1series[4] = Temperature2;
+  t0buff.push(Temperature1);
+  t1buff.push(Temperature2);
+//  t0series[0] = Temperature1;
+//  t0series[1] = Temperature1;
+//  t0series[2] = Temperature1;
+//  t0series[3] = Temperature1;
+//  t0series[4] = Temperature1;
+//  t1series[0] = Temperature2;
+//  t1series[1] = Temperature2;
+//  t1series[2] = Temperature2;
+//  t1series[3] = Temperature2;
+//  t1series[4] = Temperature2;
   Debug::print("T1: ");
   Debug::print(Temperature1);
   Debug::print(" H1: ");
@@ -115,6 +134,9 @@ void setup()
   Serial1.begin(57600);
   delay(1000);
 
+  Debug::print("size of int: ");
+  Debug::println(sizeof(rpm0));
+
   Debug::println("Ready.\n\n");
 
   prevPwm = millis();
@@ -140,13 +162,16 @@ void loop()
     prevDht = cur;
     GetSensorData(&sensor1, &Temperature1, &Humidity1);
     GetSensorData(&sensor2, &Temperature2, &Humidity2);
-    // update the series
-    for (int i = 0; i < 4; i++) {
-      t0series[i] = t0series[i+1];
-      t1series[i] = t1series[i+1];
-    }
-    t0series[4] = Temperature1;
-    t1series[4] = Temperature2;
+    t0buff.push(Temperature1);
+    t1buff.push(Temperature2);
+    MEMORY_PRINT_FREERAM
+//    // update the series
+//    for (int i = 0; i < 4; i++) {
+//      t0series[i] = t0series[i+1];
+//      t1series[i] = t1series[i+1];
+//    }
+//    t0series[4] = Temperature1;
+//    t1series[4] = Temperature2;
   }
   
   //------------------------------------------------------------
@@ -156,9 +181,10 @@ void loop()
   {
     prevPwm = cur;
     // Compute the duty cicle
-    float avg0 = (t0series[0] + t0series[1] + t0series[2] + t0series[3] + t0series[4]) / 5;
-    float avg1 = (t1series[0] + t1series[1] + t1series[2] + t1series[3] + t1series[4]) / 5;
-    float maxTemp = max(avg0, avg1);
+//    float avg0 = (t0series[0] + t0series[1] + t0series[2] + t0series[3] + t0series[4]) / 5;
+//    float avg1 = (t1series[0] + t1series[1] + t1series[2] + t1series[3] + t1series[4]) / 5;
+//    float maxTemp = max(avg0, avg1);
+    float maxTemp = max(t0avg(), t1avg());
     byte DutyMin = 64, DutyMax = 255;  // DutyMin approx. 25%
     duty = ((maxTemp - TargetTempMin) * ((DutyMax - DutyMin) / (TargetTempMax - TargetTempMin))) + DutyMin;
     // fit the duty in the range 0-255
@@ -182,6 +208,7 @@ void loop()
     Debug::print(TargetTempMax);
     Debug::print(" Duty: ");
     Debug::println(duty);
+    MEMORY_PRINT_FREERAM
 
     // Get the RPMs
     UpdateRpmValues(PWM_SAMPLETIME);
@@ -206,9 +233,14 @@ void loop()
     Serial1.print(fanRelay.isRelayOn() ? "Y" : "N");
     Debug::print(fanRelay.isRelayOn() ? "Y" : "N");
     Int16ToHex(rpm0);
-    IntToHex(freeMemory());
+    //UInt16ToHex(freeMemory());
+    IntToHex(mu_freeRam());
     Serial1.print(";");
-    Debug::print(";");
+    Debug::println(";");
+    MEMORY_PRINT_FREERAM
+    //Debug::print(fm);
+    //Debug::print("|");
+    //Debug::print(freeMemory());
     //Debug::println(sizeof(rpm0));
     
   }
@@ -244,13 +276,20 @@ void Int16ToHex(int16_t value) {
 }
 void IntToHex(int value) {
   char valChars[4]{};
+//  char outChars[4]{'0','0','0','0'};
   sprintf(valChars, "%.4X", value);
+//  outChars[0] = valChars[4];
+//  outChars[1] = valChars[5];
+//  outChars[2] = valChars[6];
+//  outChars[3] = valChars[7];
   Serial1.print(valChars);
   Debug::print(valChars);
+//  Serial1.print(outChars);
+//  Debug::print(outChars);
 }
 
 void UInt16ToHex(uint16_t value) {
-  char valChars[4]{};
+  char valChars[8]{};
   sprintf(valChars, "%.4X", value);
   Serial1.print(valChars);
   Debug::print(valChars);
@@ -302,5 +341,33 @@ void UpdateRpmValues(int sampleMillis) {
   } else {
     rpm0 = 0;
     Debug::println("Fans not working!!!");
+  }
+}
+
+//---------------------------------------------------------------------------------------
+// Average temperatures
+//---------------------------------------------------------------------------------------
+float t0avg() {
+  if (t0buff.isEmpty()) {
+    t0buff.push(Temperature1);
+    return Temperature1;
+  } else {
+    float avg0 = t0buff[0];
+    for (byte v = 1; v < t0buff.size(); v++) {
+      avg0 = (avg0 + t0buff[v]) / 2;
+    }
+    return avg0;
+  }
+}
+float t1avg() {
+  if (t1buff.isEmpty()) {
+    t1buff.push(Temperature2);
+    return Temperature2;
+  } else {
+    float avg1 = t1buff[0];
+    for (byte v = 1; v < t1buff.size(); v++) {
+      avg1 = (avg1 + t1buff[v]) / 2;
+    }
+    return avg1;
   }
 }
