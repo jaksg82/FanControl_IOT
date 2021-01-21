@@ -357,3 +357,4 @@ HMI/priv/*.h
 HMI/.theia/launch.json
 HMI/HMI.ino.nano_33_iot.bin
 HMI/HMI.ino.with_bootloader.nano_33_iot.bin
+docs/olds/*

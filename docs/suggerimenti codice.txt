@@ -1,9 +1,0 @@
-
-/* String to Char array */
-#include <string>
-#include <cstdio>
-
-std::string tmp = "cat";
-char tab2[1024];
-std::snprintf(tab2, sizeof(tab2), "%s", tmp.c_str());
-

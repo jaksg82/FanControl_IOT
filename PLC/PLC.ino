@@ -5,8 +5,6 @@
 #include <SimpleDHT.h>
 #include <EEPROM.h>
 #include <SimpleRelay.h>
-//#include <Wire.h>
-//#include <stdio.h>
 #include <CircularBuffer.h>
 #include <MemoryUsage.h>
 
@@ -22,11 +20,12 @@ float t1avg();
 #include "timer4settings.h"
 #include "Debug.h"
 #include "eepromUtil.h"
-//#include "MemoryFree.h"
 
 /*        Pinouts       */
-const int RPM_IN = 3;        // RPM input pin on interrupt0
-const int RELAY = 9;         // Relay output pin
+const int RPM0 = 2;        // RPM input pin on interrupt0
+const int RPM1 = 3;        // RPM input pin on interrupt1
+const int RELAY0 = 15;         // Relay output pin
+const int RELAY1 = 14;         // Relay output pin
 const int TEMP1_IN = 20;     // Temperature sensor input pin
 const int TEMP2_IN = 21;     // Temperature sensor input pin
 
@@ -34,11 +33,14 @@ const int TEMP2_IN = 21;     // Temperature sensor input pin
 double duty;                    // The actual pwm value
 
 /* RPM calculation */
-volatile unsigned long pulsecount0 = 0;
-unsigned long ticks0 = 0;
-int rpm0 = 0;
+volatile unsigned long pulsecount0 = 0, pulsecount1 = 0;
+unsigned long ticks0 = 0, ticks1 = 0;
+int rpm0 = 0, rpm1 = 0;
 void pickRpm0() {
   pulsecount0++;
+}
+void pickRpm1() {
+  pulsecount1++;
 }
 
 /* Uart Comm Configs */
@@ -52,7 +54,7 @@ const int DHT_SAMPLETIME = 2000;
 const int UART_SAMPLETIME = 2000;
 const long debounceDelay = 250;
 unsigned long prevPwm, prevDht, prevUart, prevComm, lastDebounceTime = 0; // Time placeholders
-
+unsigned long lastRpmRead = 0, actualRpmRead = 0;
 
 // Sensors Values
 byte Temperature1 = 0;
@@ -61,14 +63,13 @@ byte Humidity1 = 0;
 byte Humidity2 = 0;
 byte TargetTempMin = 25;
 byte TargetTempMax = 35;
-//byte t0series[5] {0, 0, 0, 0, 0};
-//byte t1series[5] {0, 0, 0, 0, 0};
 CircularBuffer<byte,5> t0buff;
 CircularBuffer<byte,5> t1buff;
 
 // Initialize all the libraries.
 SimpleDHT11 sensor1(TEMP1_IN), sensor2(TEMP2_IN);
-SimpleRelay fanRelay = SimpleRelay(RELAY);
+SimpleRelay fanRelay0 = SimpleRelay(RELAY0);
+SimpleRelay fanRelay1 = SimpleRelay(RELAY1);
 
 //-------------------------------------------------------------------------------
 // Startup configurations
@@ -80,15 +81,19 @@ void setup()
   pwm6configure();
 
   Debug::println("Fans...");
-  fanRelay.on();
+  fanRelay0.on();
+  fanRelay1.on();
   pwmSet6(255);
   // Let the fan run for 5s. Here we could add a fan health control to see if the fan revs to a certain value.
-  attachInterrupt(digitalPinToInterrupt(RPM_IN), pickRpm0, FALLING);
+  attachInterrupt(digitalPinToInterrupt(RPM0), pickRpm0, FALLING);
+  attachInterrupt(digitalPinToInterrupt(RPM1), pickRpm1, FALLING);
+  actualRpmRead = millis();
   for (int i = 0; i < 5; i++) {
     delay(1000); // Let the fans run for 1 second
-    UpdateRpmValues(1000);
+    UpdateRpmValues();
   }
-  fanRelay.off();
+  fanRelay0.off();
+  fanRelay1.off();
 
   // Get the first read of sensor
   Debug::println("Sensor...");
@@ -96,16 +101,6 @@ void setup()
   GetSensorData(&sensor2, &Temperature2, &Humidity2);
   t0buff.push(Temperature1);
   t1buff.push(Temperature2);
-//  t0series[0] = Temperature1;
-//  t0series[1] = Temperature1;
-//  t0series[2] = Temperature1;
-//  t0series[3] = Temperature1;
-//  t0series[4] = Temperature1;
-//  t1series[0] = Temperature2;
-//  t1series[1] = Temperature2;
-//  t1series[2] = Temperature2;
-//  t1series[3] = Temperature2;
-//  t1series[4] = Temperature2;
   Debug::print("T1: ");
   Debug::print(Temperature1);
   Debug::print(" H1: ");
@@ -165,13 +160,6 @@ void loop()
     t0buff.push(Temperature1);
     t1buff.push(Temperature2);
     MEMORY_PRINT_FREERAM
-//    // update the series
-//    for (int i = 0; i < 4; i++) {
-//      t0series[i] = t0series[i+1];
-//      t1series[i] = t1series[i+1];
-//    }
-//    t0series[4] = Temperature1;
-//    t1series[4] = Temperature2;
   }
   
   //------------------------------------------------------------
@@ -181,9 +169,6 @@ void loop()
   {
     prevPwm = cur;
     // Compute the duty cicle
-//    float avg0 = (t0series[0] + t0series[1] + t0series[2] + t0series[3] + t0series[4]) / 5;
-//    float avg1 = (t1series[0] + t1series[1] + t1series[2] + t1series[3] + t1series[4]) / 5;
-//    float maxTemp = max(avg0, avg1);
     float maxTemp = max(t0avg(), t1avg());
     byte DutyMin = 64, DutyMax = 255;  // DutyMin approx. 25%
     duty = ((maxTemp - TargetTempMin) * ((DutyMax - DutyMin) / (TargetTempMax - TargetTempMin))) + DutyMin;
@@ -195,12 +180,14 @@ void loop()
     if (round(duty) < DutyMin)
     {
       pwmSet6(0);
-      fanRelay.off();
+      fanRelay0.off();
+      fanRelay1.off();
     }
     else
     {
       pwmSet6(duty);
-      fanRelay.on();
+      fanRelay0.on();
+      fanRelay1.on();
     }
     Debug::print("TargetTempMin: ");
     Debug::print(TargetTempMin);
@@ -211,7 +198,7 @@ void loop()
     MEMORY_PRINT_FREERAM
 
     // Get the RPMs
-    UpdateRpmValues(PWM_SAMPLETIME);
+    UpdateRpmValues();
   }
   
   //------------------------------------------------------------
@@ -230,18 +217,16 @@ void loop()
     ByteToHex(TargetTempMin);
     ByteToHex(TargetTempMax);
     ByteToHex(fanPerc);
-    Serial1.print(fanRelay.isRelayOn() ? "Y" : "N");
-    Debug::print(fanRelay.isRelayOn() ? "Y" : "N");
+    Serial1.print(fanRelay0.isRelayOn() ? "Y" : "N");
+    Debug::print(fanRelay0.isRelayOn() ? "Y" : "N");
     Int16ToHex(rpm0);
-    //UInt16ToHex(freeMemory());
+    Serial1.print(fanRelay1.isRelayOn() ? "Y" : "N");
+    Debug::print(fanRelay1.isRelayOn() ? "Y" : "N");
+    Int16ToHex(rpm1);
     IntToHex(mu_freeRam());
     Serial1.print(";");
     Debug::println(";");
     MEMORY_PRINT_FREERAM
-    //Debug::print(fm);
-    //Debug::print("|");
-    //Debug::print(freeMemory());
-    //Debug::println(sizeof(rpm0));
     
   }
 
@@ -329,18 +314,40 @@ int GetSensorData(SimpleDHT11* pSensor, byte* ptemperature, byte* phumidity) {
 //---------------------------------------------------------------------------------------
 // RPM interrupt
 //---------------------------------------------------------------------------------------
-void UpdateRpmValues(int sampleMillis) {
-  detachInterrupt(digitalPinToInterrupt(RPM_IN)); // Detach to avoid conflicts
+void UpdateRpmValues() {
+  detachInterrupt(digitalPinToInterrupt(RPM0)); // Detach to avoid conflicts
+  detachInterrupt(digitalPinToInterrupt(RPM1)); // Detach to avoid conflicts
+  lastRpmRead = actualRpmRead;
+  actualRpmRead = millis();
   ticks0 = pulsecount0; // Store the counter
   pulsecount0 = 0; // Restart the counter
-  attachInterrupt(digitalPinToInterrupt(RPM_IN), pickRpm0, FALLING); // Enable the interrupt
+  ticks1 = pulsecount1; // Store the counter
+  pulsecount1 = 0; // Restart the counter
+  attachInterrupt(digitalPinToInterrupt(RPM0), pickRpm0, FALLING); // Enable the interrupt
+  attachInterrupt(digitalPinToInterrupt(RPM1), pickRpm1, FALLING); // Enable the interrupt
+  Debug::print("Ticks0: ");
+  Debug::print(ticks0);
+  Debug::print("Ticks1: ");
+  Debug::println(ticks1);
+  Debug::print("lastRpmRead: ");
+  Debug::print(lastRpmRead);
+  Debug::print("actualRpmRead: ");
+  Debug::println(actualRpmRead);
   if (ticks0 > 0) {
-    rpm0 = (ticks0 / 2) * 60 / (sampleMillis / 1000); // Convert from Hz to RPM
-    Debug::print("RPM: ");
+    rpm0 = (ticks0 / 2) * 60 / ((actualRpmRead - lastRpmRead) / 1000); // Convert from Hz to RPM
+    Debug::print("RPM0: ");
     Debug::println(rpm0);
   } else {
     rpm0 = 0;
-    Debug::println("Fans not working!!!");
+    Debug::println("Fans0 not working!!!");
+  }
+  if (ticks1 > 0) {
+    rpm1 = (ticks1 / 2) * 60 / ((actualRpmRead - lastRpmRead) / 1000); // Convert from Hz to RPM
+    Debug::print("RPM1: ");
+    Debug::println(rpm1);
+  } else {
+    rpm1 = 0;
+    Debug::println("Fans1 not working!!!");
   }
 }
 

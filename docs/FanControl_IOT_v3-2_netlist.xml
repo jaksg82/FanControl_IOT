@@ -1,0 +1,648 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Created with Fritzing (http://www.fritzing.org/) -->
+<netlist date="Fri Jan 8 10:53:38 2021" sketch="FanControl_IOT_v3-2.fzz">
+ <net>
+  <connector id="connector15" name="LED-">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector9" name="pin10">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector2" name="leg2">
+   <part label="RV1" title="Trimmer Potentiometer" id="854237330"/>
+  </connector>
+  <connector id="connector0" name="VSS">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector32" name="GND">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+  <connector id="connector19" name="GND">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+  <connector id="connector19" name="pin20">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+  <connector id="connector3" name="pin4">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector1" name="Pin 1">
+   <part label="RH5" title="1kΩ Resistor" id="854382780"/>
+  </connector>
+  <connector id="connector10" name="GND">
+   <part label="DHT1" title="Humidity and Temperature Sensor DHT11" id="854103060"/>
+  </connector>
+  <connector id="connector10" name="GND">
+   <part label="DHT2" title="Humidity and Temperature Sensor DHT11" id="854103090"/>
+  </connector>
+  <connector id="connector8" name="pin9">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector44" name="GND">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector43" name="GND">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector63" name="GND">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector1" name="anode">
+   <part label="LED1" title="Red (633nm) LED" id="854347190"/>
+  </connector>
+  <connector id="connector1" name="GND">
+   <part label="VREG1" title="Voltage Regulator - 5V" id="854103180"/>
+  </connector>
+  <connector id="connector0" name="GND">
+   <part label="PW1" title="Power plug" id="854103150"/>
+  </connector>
+  <connector id="connector2" name="GND">
+   <part label="PW1" title="Power plug" id="854103150"/>
+  </connector>
+  <connector id="connector0" name="COIL2">
+   <part label="RLY1" title="RELAY" id="854227250"/>
+  </connector>
+  <connector id="connector3" name="pin4">
+   <part label="J1" title="Generic male header - 4 pins" id="854103830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector2" name="output voltage">
+   <part label="VREG1" title="Voltage Regulator - 5V" id="854103180"/>
+  </connector>
+  <connector id="connector0" name="cathode">
+   <part label="D1" title="Rectifier Diode" id="854304780"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector61" name="VCC">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector1" name="anode">
+   <part label="D1" title="Rectifier Diode" id="854304780"/>
+  </connector>
+  <connector id="connector9" name="pin10">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector8" name="Vcc">
+   <part label="DHT2" title="Humidity and Temperature Sensor DHT11" id="854103090"/>
+  </connector>
+  <connector id="connector8" name="Vcc">
+   <part label="DHT1" title="Humidity and Temperature Sensor DHT11" id="854103060"/>
+  </connector>
+  <connector id="connector31" name="VIN">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+  <connector id="connector0" name="leg1">
+   <part label="RV1" title="Trimmer Potentiometer" id="854237330"/>
+  </connector>
+  <connector id="connector0" name="Pin 0">
+   <part label="RH1" title="1kΩ Resistor" id="854382760"/>
+  </connector>
+  <connector id="connector1" name="VDD">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector47" name="D4 / A6">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector60" name="D21 / A3">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector9" name="Data-signal">
+   <part label="DHT1" title="Humidity and Temperature Sensor DHT11" id="854103060"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector48" name="D5 PWM">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector58" name="D19 / A1">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector0" name="pin1">
+   <part label="J1" title="Generic male header - 4 pins" id="854103830"/>
+  </connector>
+  <connector id="connector49" name="D6 PWM / A7">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector56" name="D15 / SCK">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector55" name="D14 / MISO">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector54" name="D16 / MOSI">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector53" name="D10 PWM">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector57" name="D18 / A0">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="pin2">
+   <part label="J1" title="Generic male header - 4 pins" id="854103830"/>
+  </connector>
+  <connector id="connector46" name="D3 PWM / SCL">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector52" name="D9 PWM / A9">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector4" name="COIL1">
+   <part label="RLY1" title="RELAY" id="854227250"/>
+  </connector>
+  <connector id="connector0" name="Pin 0">
+   <part label="RP1" title="1kΩ Resistor" id="854349360"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector9" name="Data-signal">
+   <part label="DHT2" title="Humidity and Temperature Sensor DHT11" id="854103090"/>
+  </connector>
+  <connector id="connector59" name="D20 / A2">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector3" name="MAIN">
+   <part label="RLY1" title="RELAY" id="854227250"/>
+  </connector>
+  <connector id="connector1" name="VCC">
+   <part label="PW1" title="Power plug" id="854103150"/>
+  </connector>
+  <connector id="connector0" name="input voltage">
+   <part label="VREG1" title="Voltage Regulator - 5V" id="854103180"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector2" name="NO">
+   <part label="RLY1" title="RELAY" id="854227250"/>
+  </connector>
+  <connector id="connector2" name="pin3">
+   <part label="J1" title="Generic male header - 4 pins" id="854103830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector2" name="V0">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector1" name="wiper">
+   <part label="RV1" title="Trimmer Potentiometer" id="854237330"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector7" name="pin8">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector11" name="pin12">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector6" name="pin7">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector10" name="pin11">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector5" name="E">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector15" name="pin16">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector4" name="R/W">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector16" name="pin17">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector3" name="RS">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector17" name="pin18">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector42" name="D0 / RXD1">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector10" name="pin11">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector41" name="D1 / TXD1">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+  <connector id="connector11" name="pin12">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector5" name="pin6">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector37" name="A5">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector38" name="A4">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+  <connector id="connector4" name="pin5">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector44" name="3V3">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+  <connector id="connector2" name="pin3">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector0" name="1">
+   <part label="BT2" title="Momentary Switch" id="854227160"/>
+  </connector>
+  <connector id="connector0" name="1">
+   <part label="BT1" title="Momentary Switch" id="854227190"/>
+  </connector>
+  <connector id="connector0" name="1">
+   <part label="BT3" title="Momentary Switch" id="854227130"/>
+  </connector>
+  <connector id="connector0" name="1">
+   <part label="BT4" title="Momentary Switch" id="854227020"/>
+  </connector>
+  <connector id="connector41" name="A1">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="Pin 1">
+   <part label="RH4" title="1kΩ Resistor" id="854382740"/>
+  </connector>
+  <connector id="connector2" name="3">
+   <part label="BT4" title="Momentary Switch" id="854227020"/>
+  </connector>
+  <connector id="connector0" name="Pin 0">
+   <part label="RH5" title="1kΩ Resistor" id="854382780"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="Pin 1">
+   <part label="RH3" title="1kΩ Resistor" id="854382720"/>
+  </connector>
+  <connector id="connector2" name="3">
+   <part label="BT3" title="Momentary Switch" id="854227130"/>
+  </connector>
+  <connector id="connector0" name="Pin 0">
+   <part label="RH4" title="1kΩ Resistor" id="854382740"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="Pin 1">
+   <part label="RH2" title="1kΩ Resistor" id="854375710"/>
+  </connector>
+  <connector id="connector2" name="3">
+   <part label="BT2" title="Momentary Switch" id="854227160"/>
+  </connector>
+  <connector id="connector0" name="Pin 0">
+   <part label="RH3" title="1kΩ Resistor" id="854382720"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="Pin 1">
+   <part label="RH1" title="1kΩ Resistor" id="854382760"/>
+  </connector>
+  <connector id="connector2" name="3">
+   <part label="BT1" title="Momentary Switch" id="854227190"/>
+  </connector>
+  <connector id="connector0" name="Pin 0">
+   <part label="RH2" title="1kΩ Resistor" id="854375710"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector14" name="LED+">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector8" name="pin9">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector13" name="DB7">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector7" name="pin8">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector12" name="DB6">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector6" name="pin7">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector11" name="DB5">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector5" name="pin6">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector10" name="DB4">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector4" name="pin5">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector9" name="DB3">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector3" name="pin4">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector8" name="DB2">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector2" name="pin3">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector7" name="DB1">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector1" name="pin2">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector6" name="DB0">
+   <part label="LCD1" title="LCD screen" id="854103120"/>
+  </connector>
+  <connector id="connector0" name="pin1">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="Pin 1">
+   <part label="RP1" title="1kΩ Resistor" id="854349360"/>
+  </connector>
+  <connector id="connector0" name="cathode">
+   <part label="LED1" title="Red (633nm) LED" id="854347190"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="pin2">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector16" name="D1/TX">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector0" name="pin1">
+   <part label="LL1" title="Logic level converter" id="854341100"/>
+  </connector>
+  <connector id="connector17" name="D0/RX">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="NC">
+   <part label="RLY1" title="RELAY" id="854227250"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector3" name="4">
+   <part label="BT1" title="Momentary Switch" id="854227190"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="2">
+   <part label="BT1" title="Momentary Switch" id="854227190"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector3" name="4">
+   <part label="BT2" title="Momentary Switch" id="854227160"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="2">
+   <part label="BT2" title="Momentary Switch" id="854227160"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector3" name="4">
+   <part label="BT3" title="Momentary Switch" id="854227130"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="2">
+   <part label="BT3" title="Momentary Switch" id="854227130"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector3" name="4">
+   <part label="BT4" title="Momentary Switch" id="854227020"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector1" name="2">
+   <part label="BT4" title="Momentary Switch" id="854227020"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector64" name="RAW">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector50" name="D7">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector62" name="RESET">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector51" name="D8 / A8">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector45" name="D2 / SDA">
+   <part label="IC1" title="ProMicro (ATMega32U4)" id="854103030"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector14" name="pin15">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector13" name="pin14">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector18" name="pin19">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector12" name="pin13">
+   <part label="DIP2" title="LCD I2C Converter" id="854354830"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector23" name="D5">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector21" name="D3">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector22" name="D4">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector24" name="D6">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector30" name="D12/MISO">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector34" name="5V">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector33" name="RESET">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+  <connector id="connector18" name="RESET">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector36" name="A6">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector27" name="D9">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector25" name="D7">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector26" name="D8">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector28" name="D10">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector20" name="D2">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector45" name="D13/SCK">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector42" name="A0">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector40" name="A2">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector29" name="D11/MOSI">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector43" name="AREF">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector39" name="A3">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+ <net>
+  <connector id="connector35" name="A7">
+   <part label="IC2" title="Arduino Nano (Rev3.0)" id="854330630"/>
+  </connector>
+ </net>
+</netlist>
