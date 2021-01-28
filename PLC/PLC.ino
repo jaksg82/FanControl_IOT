@@ -32,7 +32,7 @@ const int TEMP2_IN = 21;     // Temperature sensor input pin
 /* PWM calculations */
 double duty;                    // The actual pwm value
 
-/* RPM calculation */
+/* RPM calculation by tick counter */
 volatile unsigned long pulsecount0 = 0, pulsecount1 = 0;
 unsigned long ticks0 = 0, ticks1 = 0;
 int rpm0 = 0, rpm1 = 0;
@@ -42,6 +42,26 @@ void pickRpm0() {
 void pickRpm1() {
   pulsecount1++;
 }
+
+/* RPM calculation by pwm read */
+/*volatile int pwm0value = 0, prevTime0 = 0, pwm1value = 0, prevTime1 = 0;
+int rpm0 = 0, rpm1 = 0;
+void rising0() {
+  attachInterrupt(digitalPinToInterrupt(RPM0), falling0, FALLING);
+  prevTime0 = micros();
+}
+void falling0() {
+  attachInterrupt(digitalPinToInterrupt(RPM0), rising0, RISING);
+  pwm0value = micros() - prevTime0;
+}
+void rising1() {
+  attachInterrupt(digitalPinToInterrupt(RPM1), falling1, FALLING);
+  prevTime1 = micros();
+}
+void falling1() {
+  attachInterrupt(digitalPinToInterrupt(RPM1), rising1, RISING);
+  pwm1value = micros() - prevTime1;
+}*/
 
 /* Uart Comm Configs */
 const byte RequestSize = 6;
@@ -68,8 +88,8 @@ CircularBuffer<byte,5> t1buff;
 
 // Initialize all the libraries.
 SimpleDHT11 sensor1(TEMP1_IN), sensor2(TEMP2_IN);
-SimpleRelay fanRelay0 = SimpleRelay(RELAY0);
-SimpleRelay fanRelay1 = SimpleRelay(RELAY1);
+SimpleRelay fanRelay0 = SimpleRelay(RELAY0, true);
+SimpleRelay fanRelay1 = SimpleRelay(RELAY1, true);
 
 //-------------------------------------------------------------------------------
 // Startup configurations
@@ -87,6 +107,8 @@ void setup()
   // Let the fan run for 5s. Here we could add a fan health control to see if the fan revs to a certain value.
   attachInterrupt(digitalPinToInterrupt(RPM0), pickRpm0, FALLING);
   attachInterrupt(digitalPinToInterrupt(RPM1), pickRpm1, FALLING);
+  //attachInterrupt(digitalPinToInterrupt(RPM0), rising0, RISING);
+  //attachInterrupt(digitalPinToInterrupt(RPM1), rising1, RISING);
   actualRpmRead = millis();
   for (int i = 0; i < 5; i++) {
     delay(1000); // Let the fans run for 1 second
@@ -236,7 +258,7 @@ void loop()
   //if (cur - prevComm >= NodeReadDelay) {
       if (Serial1.available() >= RequestSize) {
           // Read the request message
-          Debug::println("Request Available");
+          //Debug::println("Request Available");
           //readRequest();
       }
   //}
@@ -261,16 +283,9 @@ void Int16ToHex(int16_t value) {
 }
 void IntToHex(int value) {
   char valChars[4]{};
-//  char outChars[4]{'0','0','0','0'};
   sprintf(valChars, "%.4X", value);
-//  outChars[0] = valChars[4];
-//  outChars[1] = valChars[5];
-//  outChars[2] = valChars[6];
-//  outChars[3] = valChars[7];
   Serial1.print(valChars);
   Debug::print(valChars);
-//  Serial1.print(outChars);
-//  Debug::print(outChars);
 }
 
 void UInt16ToHex(uint16_t value) {
@@ -327,11 +342,11 @@ void UpdateRpmValues() {
   attachInterrupt(digitalPinToInterrupt(RPM1), pickRpm1, FALLING); // Enable the interrupt
   Debug::print("Ticks0: ");
   Debug::print(ticks0);
-  Debug::print("Ticks1: ");
+  Debug::print(" Ticks1: ");
   Debug::println(ticks1);
   Debug::print("lastRpmRead: ");
   Debug::print(lastRpmRead);
-  Debug::print("actualRpmRead: ");
+  Debug::print(" actualRpmRead: ");
   Debug::println(actualRpmRead);
   if (ticks0 > 0) {
     rpm0 = (ticks0 / 2) * 60 / ((actualRpmRead - lastRpmRead) / 1000); // Convert from Hz to RPM
@@ -350,6 +365,41 @@ void UpdateRpmValues() {
     Debug::println("Fans1 not working!!!");
   }
 }
+
+/*void UpdateRpmValues() {
+  // Detach interrupts to avoid conflicts
+  detachInterrupt(digitalPinToInterrupt(RPM0));
+  detachInterrupt(digitalPinToInterrupt(RPM1));
+  // Store the pwm values
+  int lastPwm0 = pwm0value;
+  int lastPwm1 = pwm1value;
+  // Reattach the interrupts
+  attachInterrupt(digitalPinToInterrupt(RPM0), rising0, RISING);
+  attachInterrupt(digitalPinToInterrupt(RPM1), rising1, RISING);
+  
+  Debug::print("lastPwm0: ");
+  Debug::print(lastPwm0);
+  Debug::print(" lastPwm1: ");
+  Debug::println(lastPwm1);
+
+  // Compute the RPMs
+  int pwmMaxTime = 42; // 1000000 micros divided by 23438Hz 
+  if (lastPwm0 < pwmMaxTime){
+    rpm0 = (lastPwm0 / pwmMaxTime) * 100;
+  } else {
+    rpm0 = 0;
+  }
+  if (lastPwm1 < pwmMaxTime){
+    rpm1 = (lastPwm1 / pwmMaxTime) * 100;
+  } else {
+    rpm1 = 0;
+  }
+  Debug::print("RPM0: ");
+  Debug::print(rpm0);
+  Debug::print(" RPM1: ");
+  Debug::println(rpm1);
+
+}*/
 
 //---------------------------------------------------------------------------------------
 // Average temperatures
