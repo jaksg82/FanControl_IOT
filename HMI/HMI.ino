@@ -6,8 +6,6 @@
 #include <PubSubClient.h>
 //#include <SSLClient.h>
 #include <Arduino.h>
-//#include <LiquidCrystalIO.h>
-//#include <IoAbstractionWire.h>
 #include <Wire.h>
 #include <CircularBuffer.h>
 
@@ -28,7 +26,6 @@ bool connectWiFi(char* ssid, char* pass);
 /* Local headers */
 //---------------------------------------------------------------------------------------------------
 #include "Debug.h"
-#include "pinConfig.h"
 #include "priv/credentials.h"
 //#include "priv/certificates.h"  // Needed for the SSL connection
 #include "LiquidCrystal_PCF8574_Mod.h"
@@ -36,6 +33,11 @@ bool connectWiFi(char* ssid, char* pass);
 #include "MemoryFree.h"
 #include "mqttUtil.h"               // This header contain the functions related to the MQTT
 #include "SensorsHandler.h"
+
+//---------------------------------------------------------------------------------------------------
+/* Pin declarations */
+//---------------------------------------------------------------------------------------------------
+const int BTNS = A1;
 
 // Initialize the Ethernet client library
 // with the IP address and port of the server
@@ -48,21 +50,17 @@ long lastReconnectAttempt = 0;
 long lastTopicPublish = 0;
 
 // Tells the amount of time (in ms) to wait between updates
-const long debounceDelay = 250;
+const long BUTTON_SAMPLETIME = 200;
 const long UART_SAMPLETIME = 500;
 const long TOPICPUSH_TIME = 5000;
 
-unsigned long prevI2C, lastDebounceTime = 0; // Time placeholders
+unsigned long prevI2C = 0, prevButton = 0; // Time placeholders
+const byte uartMsgSize = 35;
 CircularBuffer<char,250> uartBuff;           // Serial buffer
 SensorsHandler sens;                         // Sensor helper class
 
 // Sensors Values
 byte lastT0 = 0, lastT1 = 0, lastTmin = 0, lastTmax = 0;
-//byte sens1t = 0, sens1h = 0;
-//byte fan0perc = 0;
-//bool fan0isOn = false;
-//int mem0used = 0, mem0total = 2048; // RAM Memory of ProMicro board
-//int mem1used = 0, mem1total = 4000; // RAM Memory of Nano 33 Iot board
 
 // LCD Pages Strings
 int actualPage = 1;
@@ -98,10 +96,7 @@ void setup()
   Debug::println("-> MQTT configured");
   
   // Pin setup
-  // pinMode(BTN_UP, INPUT_PULLUP);
-  // pinMode(BTN_DOWN, INPUT_PULLUP);
-  // pinMode(BTN_CANC, INPUT_PULLUP);
-  // pinMode(BTN_OK, INPUT_PULLUP);
+  pinMode(BTNS, INPUT);
   Debug::println("-> Buttons configured");
 
   // Start the serial on the board
@@ -119,6 +114,18 @@ void loop()
 {
   long nowSensors = millis();
 
+  // Check the buttons
+  if (nowSensors - prevButton > BUTTON_SAMPLETIME) {
+    prevButton = nowSensors;
+    int btnVal = analogRead(BTNS);
+    byte btnPress = getPressedButton(btnVal);
+    lpg.buttonPressed(btnPress);
+    Debug::print("Analog read: ");
+    Debug::print(btnVal);
+    Debug::print("  Button: ");
+    Debug::println(btnPress);
+  }
+
   // Check uart connection
   if (nowSensors - prevI2C > UART_SAMPLETIME) {
     prevI2C = nowSensors;
@@ -131,11 +138,11 @@ void loop()
     // Scan the buffer for the starting char
     while(!uartBuff.isEmpty()) {
       if (uartBuff.first() == '$') { // Buffer start with the start id char
-        if(uartBuff.size() > 30) {   // Buffer is big enough to store the entire string
+        if(uartBuff.size() > uartMsgSize) {   // Buffer is big enough to store the entire string
           // Store the chars to send to sensor handler parser
           String tmp;
           char tc;
-          for (byte i = 0; i <= 30; i++) {
+          for (byte i = 0; i <= uartMsgSize; i++) {
             tc = (char)uartBuff.shift();
             tmp += tc;
             if (tc == ';') { break; }
@@ -158,49 +165,59 @@ void loop()
     lpg.updateSensorValues(sens.sensor0temperature(), sens.sensor1temperature());
     lpg.updateTemperatureRange(sens.temperatureRangeMin(), sens.temperatureRangeMax()); 
     lpg.updateFanStatus(sens.fan0power(), sens.fan0isOn());
+    lpg.updateIotStatus(WiFi.status() == WL_CONNECTED, psClient.connected());
+    Debug::print("WiFi connected: ");
+    Debug::print(WiFi.status() == WL_CONNECTED);
+    Debug::print("  MQTT connected: ");
+    Debug::println(psClient.connected());
   }
 
   // Check WiFi Connection
   if (WiFi.status() != WL_CONNECTED) {
     connectWiFi(networkSSID, networkPASSWORD);
-  }
-
-  // Check MQTT Connection
-  if (!psClient.connected()) {
-    long nowWIFI = millis();
-    if (nowWIFI - lastReconnectAttempt > 500) {
-      lastReconnectAttempt = nowWIFI;
-      //Attempt to reconnect
-      if (reconnect(wifiClient, psClient, mqttCLIENTID, mqttUSERNAME, mqttPASSWORD, mqttTopicRoot)) {
-        lastReconnectAttempt = 0;
+  } else {  // WiFi Connected
+    // Check MQTT Connection
+    if (!psClient.connected()) {
+      long nowWIFI = millis();
+      if (nowWIFI - lastReconnectAttempt > 500) {
+        lastReconnectAttempt = nowWIFI;
+        //Attempt to reconnect
+        if (reconnect(wifiClient, psClient, mqttCLIENTID, mqttUSERNAME, mqttPASSWORD, mqttTopicRoot)) {
+          lastReconnectAttempt = 0;
+        }
       }
-    }
     
-  } else { // Client connected
-    // Publish the sensors topics when needed or at max interval
-    if (lastT0 != sens.sensor0temperature() || lastT1 != sens.sensor1temperature() || nowSensors - lastTopicPublish > TOPICPUSH_TIME) {
-      // Temperatures changed from the last time
-      psClient.publish(mqttTopicSensor0, sens.sensor0message().c_str());
-      psClient.publish(mqttTopicSensor1, sens.sensor1message().c_str());
-      psClient.publish(mqttTopicFan0, sens.fan0message().c_str());
-      psClient.publish(mqttTopicFan1, sens.fan1message().c_str());
-      psClient.publish(mqttTopicMemory0, sens.memory0message().c_str());
-      psClient.publish(mqttTopicMemory1, sens.memory1message().c_str());
-      lastT0 = sens.sensor0temperature();
-      lastT1 = sens.sensor1temperature();
-      lastTopicPublish = nowSensors;
-    }
-    // Publish the range when needed
-    if (lastTmin != sens.temperatureRangeMin() || lastTmax != sens.temperatureRangeMax()) {
-      // Temperature range changed
-      psClient.publish(mqttTopicRangeT, sens.rangeTmessage().c_str());
-      lastTmin = sens.temperatureRangeMin();
-      lastTmax = sens.temperatureRangeMax();
-    }
+    } else { // MQTT Client connected
+      // Publish the sensors topics when needed or at max interval
+      if (lastT0 != sens.sensor0temperature() || lastT1 != sens.sensor1temperature() || nowSensors - lastTopicPublish > TOPICPUSH_TIME) {
+        // Temperatures changed from the last time
+        psClient.publish(mqttTopicSensor0, sens.sensor0message().c_str());
+        psClient.publish(mqttTopicSensor1, sens.sensor1message().c_str());
+        psClient.publish(mqttTopicFan0, sens.fan0message().c_str());
+        psClient.publish(mqttTopicFan1, sens.fan1message().c_str());
+        psClient.publish(mqttTopicMemory0, sens.memory0message().c_str());
+        psClient.publish(mqttTopicMemory1, sens.memory1message().c_str());
+        lastT0 = sens.sensor0temperature();
+        lastT1 = sens.sensor1temperature();
+        lastTopicPublish = nowSensors;
+      }
+      // Publish the range when needed
+      if (lastTmin != sens.temperatureRangeMin() || lastTmax != sens.temperatureRangeMax()) {
+        // Temperature range changed
+        psClient.publish(mqttTopicRangeT, sens.rangeTmessage().c_str());
+        lastTmin = sens.temperatureRangeMin();
+        lastTmax = sens.temperatureRangeMax();
+      }
+      psClient.loop();
+    } // MQTT Client connected
+  } // WiFi Connected
 
+}
 
-    psClient.loop();
-  }
-
-
+byte getPressedButton(int value) {
+  if (value >= 180 && value <= 200) { return 11; }  // UP   botton
+  if (value >= 355 && value <= 375) { return 44; }  // CANC button
+  if (value >= 540 && value <= 560) { return 33; }  // OK   button
+  if (value >= 750 && value <= 770) { return 22; }  // DOWN button
+  return 0;
 }

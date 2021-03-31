@@ -96,9 +96,13 @@ SimpleRelay fanRelay1 = SimpleRelay(RELAY1, true);
 //-------------------------------------------------------------------------------
 void setup()
 {
-  delay(1000);
+  // Configure internal pullup on the rpm pins
+  pinMode(RPM0, INPUT_PULLUP);
+  pinMode(RPM1, INPUT_PULLUP);
   // Configure the clock on Timer 4
   pwm6configure();
+
+  delay(1000);
 
   Debug::println("Fans...");
   fanRelay0.on();
@@ -347,7 +351,9 @@ void UpdateRpmValues() {
   Debug::print("lastRpmRead: ");
   Debug::print(lastRpmRead);
   Debug::print(" actualRpmRead: ");
-  Debug::println(actualRpmRead);
+  Debug::print(actualRpmRead);
+  Debug::print(" sample time: ");
+  Debug::println(actualRpmRead-lastRpmRead);
   if (ticks0 > 0) {
     rpm0 = (ticks0 / 2) * 60 / ((actualRpmRead - lastRpmRead) / 1000); // Convert from Hz to RPM
     Debug::print("RPM0: ");

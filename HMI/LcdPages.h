@@ -34,10 +34,12 @@ class LcdPages : public Print {
   //  16 chars     0000000000111111  
   //               0123456789012345
   char p0_0[20] = "T0:     T1:     ";
-	char p0_1[20] = "Fan:    %  OFF  ";
+	char p0_1[20] = "Fan:    % OFF   ";
 	char p1_0[20] = "Temperatures    ";
   char p1_1[20] = "Min:    Max:    ";
 	bool _isEditPage = false;
+  bool _isWifi = false;
+  bool _isMqtt = false;
   
 	// lcd display class
 	//LiquidCrystal* _lcd;
@@ -47,6 +49,7 @@ class LcdPages : public Print {
 	
 	// String updaters
   void degreeFix();
+  void createSpecialChars();
 	void changeActualTempString();
 	void changeFanString();
 	void changeTempRangeString();
@@ -54,6 +57,7 @@ class LcdPages : public Print {
 
 	// LCD content updater
 	bool updateLcd();
+  void updateIotChars();
 	
   public:
     // Constructor
@@ -68,7 +72,8 @@ class LcdPages : public Print {
 	void updateSensorValues(byte t0, byte t1);
 	void updateSensorValues(byte t0, byte h0, byte t1, byte h1);
 	void updateFanStatus(byte fanPerc, bool isOn);
-	
+	void updateIotStatus(bool isWifiConnected, bool isMqttConnected);
+ 
 	// Page handling
 	bool buttonPressed(byte btn);
 	

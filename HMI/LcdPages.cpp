@@ -13,6 +13,7 @@ LcdPages::LcdPages(LiquidCrystal_PCF8574_Mod& lcd) {
   _lcd = &lcd;
   isAttached = true;
   degreeFix();
+  createSpecialChars();
   updateLcd();
 }
 //LcdPages::LcdPages(LiquidCrystal& lcd) {
@@ -62,6 +63,13 @@ void LcdPages::degreeFix() {
   this->p1_1[15] = ' ';
 }
 
+void LcdPages::createSpecialChars() {
+  int char0[] = {B01110, B10001, B01110, B10001, B00100, B01010, B00000, B00100}; // WiFi character
+  int char1[] = {B10001, B11011, B10101, B10001, B01100, B10010, B10010, B01101}; // MQTT character
+  this->_lcd->createChar(0, char0);
+  this->_lcd->createChar(1, char1);
+}
+
 void LcdPages::changeActualTempString() {
 	// Temperature Sensor 0
 	char t0c[4]{};
@@ -102,13 +110,13 @@ void LcdPages::changeFanString() {
 	this->p0_1[7] = c3;
 
 	if (_isOn) {
-		this->p0_1[11] = 'O';
-		this->p0_1[12] = 'N';
-		this->p0_1[13] = ' ';
+		this->p0_1[10] = 'O';
+		this->p0_1[11] = 'N';
+		this->p0_1[12] = ' ';
 	} else {
-		this->p0_1[11] = 'O';
+		this->p0_1[10] = 'O';
+		this->p0_1[11] = 'F';
 		this->p0_1[12] = 'F';
-		this->p0_1[13] = 'F';
 	}
   //Check what page is active
   if (this->_actualPage == 0) { updateLcd(); }
@@ -176,6 +184,7 @@ bool LcdPages::updateLcd() {
 		  this->_lcd->print(this->p0_0);
   		this->_lcd->setCursor(0, 1);
   		this->_lcd->print(this->p0_1);
+      this->updateIotChars();
   		break;
   	case 1: // Temperature range view
   		this->_lcd->noBlink();
@@ -202,6 +211,21 @@ bool LcdPages::updateLcd() {
     return true;
   } else {
     return false;
+  }
+}
+
+void LcdPages::updateIotChars() {
+  this->_lcd->setCursor(14, 1);
+  if (_isWifi) {
+    this->_lcd->write(byte(0));
+  } else {
+    this->_lcd->write('-');
+  }
+  this->_lcd->setCursor(15, 1);
+  if (_isMqtt) {
+    this->_lcd->write(byte(1));
+  } else {
+    this->_lcd->write('-');
   }
 }
 
@@ -243,6 +267,16 @@ void LcdPages::updateFanStatus(byte fanPerc, bool isOn) {
   }
 }
 
+void LcdPages::updateIotStatus(bool isWifiConnected, bool isMqttConnected) {
+  _isWifi = isWifiConnected;
+  if (_isWifi) {
+    _isMqtt = isMqttConnected;
+  } else {
+    _isMqtt = false; // MQQT can NOT be connected if the WiFi are not available
+  }
+  //Check what page is active
+  if (this->_actualPage == 0) { updateLcd(); }
+}
 //----------------------------------------------------------------
 // Public Value updaters
 //----------------------------------------------------------------

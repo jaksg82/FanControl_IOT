@@ -78,10 +78,10 @@ uint16_t SensorsHandler::parseHex16(String value) {
 
 bool SensorsHandler::fromUartMessage(String message){
   // Make some chacks on the given message string
-  if (message.length() < 30) { return false; } // String too short
+  if (message.length() < 35) { return false; } // String too short
   if (message.charAt(0) != '$') { return false; } // String do not start with the correct char
   if (message.charAt(5) != ',') { return false; } // String delimiter not in the correct position
-  if (message.charAt(29) != ';') { return false; } // String do not end with the correct char
+  if (message.charAt(34) != ';') { return false; } // String do not end with the correct char
   
   // Parse the values
   uint8_t v0 = parseHex8(message.substring(6, 8));
@@ -92,8 +92,10 @@ bool SensorsHandler::fromUartMessage(String message){
   uint8_t v5 = parseHex8(message.substring(16, 18));
   uint8_t v6 = parseHex8(message.substring(18, 20));
   uint8_t v7 = parseHex4((char)message.charAt(20));
-  uint16_t v8 = parseHex8(message.substring(21, 25));
-  uint16_t v9 = parseHex8(message.substring(25, 29));
+  uint16_t v8 = parseHex16(message.substring(21, 25));
+  uint8_t v9 = parseHex4((char)message.charAt(25));
+  uint16_t v10 = parseHex16(message.substring(26, 30));
+  uint16_t v11 = parseHex16(message.substring(30, 34));
 
   // Check and store the values
   if (v0 != UINT8_MAX) { s0t = v0; }
@@ -102,10 +104,12 @@ bool SensorsHandler::fromUartMessage(String message){
   if (v3 != UINT8_MAX) { s1h = v3; }
   if (v4 != UINT8_MAX) { tmin = v4; }
   if (v5 != UINT8_MAX) { tmax = v5; }
-  if (v6 != UINT8_MAX) { f0p = v6; }
+  if (v6 != UINT8_MAX) { f0p = v6; f1p = f0p; }  // There is only one power value for both fans
   if (v7 != UINT8_MAX) { f0on = (v7 == yesValue); }
   if (v8 != UINT16_MAX) { f0r = v8; }
-  if (v9 != UINT16_MAX) { m1u = v9; }
+  if (v9 != UINT8_MAX) { f1on = (v9 == yesValue); }
+  if (v10 != UINT16_MAX) { f1r = v10; }
+  if (v11 != UINT16_MAX) { m1u = v11; }
   return true;
 }
 
