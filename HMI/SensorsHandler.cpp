@@ -6,7 +6,7 @@
 SensorsHandler::SensorsHandler(){}
 
 SensorsHandler::SensorsHandler(int mem0 = 32768, int mem1 = 2560){
-    // Initialize 
+    // Initialize
     m0t = mem0; // Nano 33 IoT
     m1t = mem1; // ProMicro ATmega32U4
 }
@@ -50,7 +50,7 @@ uint8_t SensorsHandler::parseHex8(String value) {
      uint8_t c0 = parseHex4((char)value.charAt(0));
      uint8_t c1 = parseHex4((char)value.charAt(1));
      if (c0 != 255 && c1 != 255) {
-      retVal = (c0 * 16) + c1; 
+      retVal = (c0 * 16) + c1;
      }
   }
   return retVal;
@@ -64,7 +64,7 @@ uint16_t SensorsHandler::parseHex16(String value) {
      uint8_t c2 = parseHex4((char)value.charAt(2));
      uint8_t c3 = parseHex4((char)value.charAt(3));
      if (c0 != 255 && c1 != 255 && c2 != 255 && c3 != 255) {
-      retVal = (c0 * 4096) + (c1 * 256) + (c2 * 16) + c3; 
+      retVal = (c0 * 4096) + (c1 * 256) + (c2 * 16) + c3;
      }
   }
   return retVal;
@@ -72,7 +72,7 @@ uint16_t SensorsHandler::parseHex16(String value) {
 
 
 //----------------------------------------------------------------
-// Public functions
+// Public input functions
 //----------------------------------------------------------------
 
 
@@ -82,7 +82,7 @@ bool SensorsHandler::fromUartMessage(String message){
   if (message.charAt(0) != '$') { return false; } // String do not start with the correct char
   if (message.charAt(5) != ',') { return false; } // String delimiter not in the correct position
   if (message.charAt(34) != ';') { return false; } // String do not end with the correct char
-  
+
   // Parse the values
   uint8_t v0 = parseHex8(message.substring(6, 8));
   uint8_t v1 = parseHex8(message.substring(8, 10));
@@ -113,6 +113,16 @@ bool SensorsHandler::fromUartMessage(String message){
   return true;
 }
 
+bool SensorsHandler::fromUartMessage(String message, uint32_t epoch){
+  msgEpoch = epoch;
+  fromUartMessage(message);
+  return true;
+}
+
+//----------------------------------------------------------------
+// Public output functions
+//----------------------------------------------------------------
+
 String SensorsHandler::debugString() {
   // Add Sensors
   String retMsg = "Sensors:" + String(s0t) + "|" + String(s0h) + "|" + String(s1t) + "|" + String(s1h) + "|" + String(tmin) + "|" + String(tmax);
@@ -123,69 +133,83 @@ String SensorsHandler::debugString() {
   return retMsg;
 }
 
-String SensorsHandler::sensor0message() {
+String SensorsHandler::sensor0message(uint32_t epoch) {
   String retMsg = "{\"temperature\": ";
   retMsg += String(s0t);
   retMsg += ", \"humidity\": ";
   retMsg += String(s0h);
+  retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
 }
 
-String SensorsHandler::sensor1message() {
+String SensorsHandler::sensor1message(uint32_t epoch) {
   String retMsg = "{\"temperature\": ";
   retMsg += String(s1t);
   retMsg += ", \"humidity\": ";
   retMsg += String(s1h);
+  retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
 }
 
-String SensorsHandler::fan0message() {
+String SensorsHandler::fan0message(uint32_t epoch) {
   String retMsg = "{\"power\": ";
   retMsg += String(f0p);
   retMsg += ", \"rpm\": ";
   retMsg += String(f0r);
   retMsg += ", \"IsOn\": ";
   retMsg += String(f0on);
+  retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
 }
 
-String SensorsHandler::fan1message() {
+String SensorsHandler::fan1message(uint32_t epoch) {
   String retMsg = "{\"power\": ";
   retMsg += String(f1p);
   retMsg += ", \"rpm\": ";
   retMsg += String(f1r);
   retMsg += ", \"IsOn\": ";
   retMsg += String(f1on);
+  retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
 }
 
-String SensorsHandler::memory0message() {
+String SensorsHandler::memory0message(uint32_t epoch) {
   String retMsg = "{\"total\": ";
   retMsg += String(m0t);
   retMsg += ", \"free\": ";
   retMsg += String(m0u);
+  retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
 }
 
-String SensorsHandler::memory1message() {
+String SensorsHandler::memory1message(uint32_t epoch) {
   String retMsg = "{\"total\": ";
   retMsg += String(m1t);
   retMsg += ", \"free\": ";
   retMsg += String(m1u);
+  retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
 }
 
-String SensorsHandler::rangeTmessage() {
+String SensorsHandler::rangeTmessage(uint32_t epoch) {
   String retMsg = "{\"min\": ";
   retMsg += String(s0t);
   retMsg += ", \"max\": ";
   retMsg += String(s0h);
+  retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
 }

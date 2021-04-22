@@ -27,17 +27,19 @@ class SensorsHandler {
     uint8_t parseHex4(char value);
     uint8_t parseHex8(String value);
     uint16_t parseHex16(String value);
-    
+    uint32_t msgEpoch = 0;
+
   public:
     // Constructors
     SensorsHandler();
     SensorsHandler(int mem0, int mem1);
-    
+
     // Bulk input and output
     //bool fromUartMessage(char* message, size_t msgSize);
     bool fromUartMessage(String message);
+    bool fromUartMessage(String message, uint32_t epoch);
     String debugString();
-    
+
     //void setTotalMemory0(int value);  // Setted on initialization
     //void setTotalMemory1(int value);  // Setted on initialization
     void setFreeMemory0(int value) { m0u = value; }
@@ -60,16 +62,16 @@ class SensorsHandler {
     uint16_t memory1free() { return m1u; }
     uint16_t memory0total() { return m0t; }
     uint16_t memory1total() { return m1t; }
-    
+
     // Get mqtt message payloads
-    String sensor0message();
-    String sensor1message();
-    String fan0message();
-    String fan1message();
-    String rangeTmessage();
-    String memory0message();
-    String memory1message();
-    
+    String sensor0message(uint32_t epoch);
+    String sensor1message(uint32_t epoch);
+    String fan0message(uint32_t epoch);
+    String fan1message(uint32_t epoch);
+    String rangeTmessage(uint32_t epoch);
+    String memory0message(uint32_t epoch);
+    String memory1message(uint32_t epoch);
+
 
 };
 

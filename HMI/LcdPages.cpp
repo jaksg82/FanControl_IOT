@@ -363,5 +363,6 @@ bool LcdPages::buttonPressed(byte btn) {
 	}
 
 	// Update LCD
+	if (res) { updateLcd(); }
 	return res;
 }

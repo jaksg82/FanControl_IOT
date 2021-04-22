@@ -4,10 +4,12 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include <PubSubClient.h>
+#include <WiFiUdp.h>
 //#include <SSLClient.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include <CircularBuffer.h>
+#include <TimeLib.h>
 
 //---------------------------------------------------------------------------------------------------
 // Declare structs
@@ -45,16 +47,24 @@ const int BTNS = A1;
 int status = WL_IDLE_STATUS;
 WiFiClient    wifiClient;            // Used for the TCP socket connection
 PubSubClient psClient(wifiClient);
+WiFiUDP Udp;    // A UDP instance to let us send and receive packets over UDP
+
+// Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+const unsigned long seventyYears = 2208988800UL;
+const int NTP_PACKET_SIZE = 48;
+byte packetBuffer[NTP_PACKET_SIZE];
 
 long lastReconnectAttempt = 0;
 long lastTopicPublish = 0;
+long lastTimeCheck = 0;
 
 // Tells the amount of time (in ms) to wait between updates
 const long BUTTON_SAMPLETIME = 200;
 const long UART_SAMPLETIME = 500;
-const long TOPICPUSH_TIME = 5000;
+const long TOPICPUSH_TIME = 6000;
+const long NTP_SAMPLETIME = 600000;
 
-unsigned long prevI2C = 0, prevButton = 0; // Time placeholders
+unsigned long prevI2C = 0, prevButton = 0, prevNTP = 0; // Time placeholders
 const byte uartMsgSize = 35;
 CircularBuffer<char,250> uartBuff;           // Serial buffer
 SensorsHandler sens;                         // Sensor helper class
@@ -90,11 +100,6 @@ void setup()
   delay(1000);
   Debug::println("-> LCD configured");
   
-  // MQTT Setup
-  psClient.setServer(mqttSERVER, mqttPORT);
-  psClient.setCallback(callback);
-  Debug::println("-> MQTT configured");
-  
   // Pin setup
   pinMode(BTNS, INPUT);
   Debug::println("-> Buttons configured");
@@ -102,7 +107,19 @@ void setup()
   // Start the serial on the board
   Serial1.begin(57600);
   Debug::println("-> Serial1 started");
-  
+
+  // MQTT Setup
+  psClient.setServer(mqttSERVER, mqttPORT);
+  psClient.setCallback(callback);
+  Debug::println("-> MQTT configured");
+
+  // WiFi NTP Setup
+  Debug::println("-> Connecting to WiFi...");
+  connectWiFi(networkSSID, networkPASSWORD);
+  Udp.begin(udpLocalPort);
+  setSyncProvider(getNtpTime);
+  Debug::println("-> NTP configured");
+
   // Allow the hardware to sort itself out
   delay(1500);
   lastReconnectAttempt = 0;
@@ -113,6 +130,7 @@ void setup()
 void loop()
 {
   long nowSensors = millis();
+  uint32_t nowTime = now();
 
   // Check the buttons
   if (nowSensors - prevButton > BUTTON_SAMPLETIME) {
@@ -120,10 +138,10 @@ void loop()
     int btnVal = analogRead(BTNS);
     byte btnPress = getPressedButton(btnVal);
     lpg.buttonPressed(btnPress);
-    Debug::print("Analog read: ");
-    Debug::print(btnVal);
-    Debug::print("  Button: ");
-    Debug::println(btnPress);
+//    Debug::print("Analog read: ");
+//    Debug::print(btnVal);
+//    Debug::print("  Button: ");
+//    Debug::println(btnPress);
   }
 
   // Check uart connection
@@ -175,6 +193,7 @@ void loop()
   // Check WiFi Connection
   if (WiFi.status() != WL_CONNECTED) {
     connectWiFi(networkSSID, networkPASSWORD);
+    Udp.begin(udpLocalPort);
   } else {  // WiFi Connected
     // Check MQTT Connection
     if (!psClient.connected()) {
@@ -191,28 +210,47 @@ void loop()
       // Publish the sensors topics when needed or at max interval
       if (lastT0 != sens.sensor0temperature() || lastT1 != sens.sensor1temperature() || nowSensors - lastTopicPublish > TOPICPUSH_TIME) {
         // Temperatures changed from the last time
-        psClient.publish(mqttTopicSensor0, sens.sensor0message().c_str());
-        psClient.publish(mqttTopicSensor1, sens.sensor1message().c_str());
-        psClient.publish(mqttTopicFan0, sens.fan0message().c_str());
-        psClient.publish(mqttTopicFan1, sens.fan1message().c_str());
-        psClient.publish(mqttTopicMemory0, sens.memory0message().c_str());
-        psClient.publish(mqttTopicMemory1, sens.memory1message().c_str());
+        psClient.publish(mqttTopicSensor0, sens.sensor0message(nowTime).c_str());
+        psClient.publish(mqttTopicSensor1, sens.sensor1message(nowTime).c_str());
+        psClient.publish(mqttTopicFan0, sens.fan0message(nowTime).c_str());
+        psClient.publish(mqttTopicFan1, sens.fan1message(nowTime).c_str());
+        psClient.publish(mqttTopicMemory0, sens.memory0message(nowTime).c_str());
+        psClient.publish(mqttTopicMemory1, sens.memory1message(nowTime).c_str());
         lastT0 = sens.sensor0temperature();
         lastT1 = sens.sensor1temperature();
         lastTopicPublish = nowSensors;
+        Debug::print("MQTT Publised with clock: ");
+        Debug::print((timeStatus() != timeNotSet) ? "SYNC  " : "ERROR ");
+        Debug::print("DateTime: ");
+        Debug::print(digitalClockDisplay());
+        Debug::print("  Unix format: ");
+        Debug::println(nowTime);
       }
       // Publish the range when needed
-      if (lastTmin != sens.temperatureRangeMin() || lastTmax != sens.temperatureRangeMax()) {
+      if (lastTmin != sens.temperatureRangeMin() || lastTmax != sens.temperatureRangeMax() || nowSensors - lastTopicPublish > TOPICPUSH_TIME * 10) {
         // Temperature range changed
-        psClient.publish(mqttTopicRangeT, sens.rangeTmessage().c_str());
+        psClient.publish(mqttTopicRangeT, sens.rangeTmessage(nowTime).c_str());
         lastTmin = sens.temperatureRangeMin();
         lastTmax = sens.temperatureRangeMax();
       }
       psClient.loop();
     } // MQTT Client connected
+    // Check Time sync packets
+    if(nowSensors - prevNTP > NTP_SAMPLETIME) {
+      prevNTP = nowSensors;
+      Debug::print((timeStatus() != timeNotSet) ? "SYNC  " : "ERROR ");
+      Debug::print("DateTime: ");
+      Debug::print(digitalClockDisplay());
+      Debug::print("  Unix format: ");
+      Debug::println(nowTime);
+    }
   } // WiFi Connected
 
 }
+
+//---------------------------------------------------------------------------------------------------
+/* Internal functions */
+//---------------------------------------------------------------------------------------------------
 
 byte getPressedButton(int value) {
   if (value >= 180 && value <= 200) { return 11; }  // UP   botton
@@ -220,4 +258,78 @@ byte getPressedButton(int value) {
   if (value >= 540 && value <= 560) { return 33; }  // OK   button
   if (value >= 750 && value <= 770) { return 22; }  // DOWN button
   return 0;
+}
+
+// send an NTP request to the time server at the given address
+unsigned long sendNTPpacket(IPAddress &address) {
+  // set all bytes in the buffer to 0
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  // Initialize values needed to form NTP request
+  // (see URL above for details on the packets)
+  packetBuffer[0] = 0b11100011;   // LI, Version, Mode
+  packetBuffer[1] = 0;     // Stratum, or type of clock
+  packetBuffer[2] = 6;     // Polling Interval
+  packetBuffer[3] = 0xEC;  // Peer Clock Precision
+  // 8 bytes of zero for Root Delay & Root Dispersion
+  packetBuffer[12]  = 49;
+  packetBuffer[13]  = 0x4E;
+  packetBuffer[14]  = 49;
+  packetBuffer[15]  = 52;
+  // all NTP fields have been given values, now
+  // you can send a packet requesting a timestamp:
+  Udp.beginPacket(address, 123); //NTP requests are to port 123
+  Udp.write(packetBuffer, NTP_PACKET_SIZE);
+  Udp.endPacket();
+}
+
+time_t getNtpTime()
+{
+  while (Udp.parsePacket() > 0) ; // discard any previously received packets
+  Debug::println("Transmit NTP Request");
+  sendNTPpacket(timeServer);
+  uint32_t beginWait = millis();
+  while (millis() - beginWait < 1500) {
+    int size = Udp.parsePacket();
+    if (size >= NTP_PACKET_SIZE) {
+      Debug::println("Receive NTP Response");
+      Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
+      unsigned long secsSince1900;
+      // convert four bytes starting at location 40 to a long integer
+      secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
+      secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
+      secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
+      secsSince1900 |= (unsigned long)packetBuffer[43];
+     return secsSince1900 - seventyYears;
+    }
+  }
+  Debug::println("No NTP Response :-(");
+  return 0; // return 0 if unable to get the time
+}
+
+String digitalClockDisplay(){
+  // digital clock display of the time
+  String resTime = "";
+  resTime += printDigits(year());
+  resTime += "-";
+  resTime += printDigits(month());
+  resTime += "-";
+  resTime += printDigits(day());
+  resTime += " ";
+  resTime += printDigits(hour());
+  resTime += ":";
+  resTime += printDigits(minute());
+  resTime += ":";
+  resTime += printDigits(second());
+  return resTime;
+}
+
+String printDigits(int digits){
+  // utility for digital clock display
+  String res = "";
+  if(digits < 10){
+    res = "0" + (String)digits;
+  } else {
+    res = (String)digits;
+  }
+  return res;
 }
