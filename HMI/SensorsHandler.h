@@ -28,6 +28,7 @@ class SensorsHandler {
     uint8_t parseHex8(String value);
     uint16_t parseHex16(String value);
     uint32_t msgEpoch = 0;
+    String lastmsg = "";
 
   public:
     // Constructors
@@ -71,6 +72,8 @@ class SensorsHandler {
     String rangeTmessage(uint32_t epoch);
     String memory0message(uint32_t epoch);
     String memory1message(uint32_t epoch);
+    String plcmessage();
+    String plcmessage(uint32_t epoch);
 
 
 };

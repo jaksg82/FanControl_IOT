@@ -66,6 +66,7 @@ const long NTP_SAMPLETIME = 600000;
 
 unsigned long prevI2C = 0, prevButton = 0, prevNTP = 0; // Time placeholders
 const byte uartMsgSize = 35;
+byte uartMsgAvailable = 0;
 CircularBuffer<char,250> uartBuff;           // Serial buffer
 SensorsHandler sens;                         // Sensor helper class
 
@@ -166,7 +167,7 @@ void loop()
             if (tc == ';') { break; }
           }
           // Send the string to the sensor handler
-          sens.fromUartMessage(tmp);
+          if (sens.fromUartMessage(tmp, nowTime)) { uartMsgAvailable = 1; }
           break; // exit while message readed
         } else {
           break; // need to recieve more chars from the serial
@@ -207,6 +208,11 @@ void loop()
       }
     
     } else { // MQTT Client connected
+      // Send the plc message to the mqtt server
+      if (uartMsgAvailable == 1) {
+        psClient.publish(mqttTopicPlc, sens.plcmessage().c_str());
+        uartMsgAvailable = 0;
+      }
       // Publish the sensors topics when needed or at max interval
       if (lastT0 != sens.sensor0temperature() || lastT1 != sens.sensor1temperature() || nowSensors - lastTopicPublish > TOPICPUSH_TIME) {
         // Temperatures changed from the last time

@@ -82,7 +82,8 @@ bool SensorsHandler::fromUartMessage(String message){
   if (message.charAt(0) != '$') { return false; } // String do not start with the correct char
   if (message.charAt(5) != ',') { return false; } // String delimiter not in the correct position
   if (message.charAt(34) != ';') { return false; } // String do not end with the correct char
-
+  // Store the message
+  lastmsg = message;
   // Parse the values
   uint8_t v0 = parseHex8(message.substring(6, 8));
   uint8_t v1 = parseHex8(message.substring(8, 10));
@@ -209,6 +210,24 @@ String SensorsHandler::rangeTmessage(uint32_t epoch) {
   retMsg += ", \"max\": ";
   retMsg += String(s0h);
   retMsg += ", \"_timestamp\": ";
+  retMsg += String(epoch);
+  retMsg += "}";
+  return retMsg;
+}
+
+String SensorsHandler::plcmessage() {
+  String retMsg = "{\"plc\": \"";
+  retMsg += lastmsg;
+  retMsg += "\", \"_timestamp\": ";
+  retMsg += String(msgEpoch);
+  retMsg += "}";
+  return retMsg;
+}
+
+String SensorsHandler::plcmessage(uint32_t epoch) {
+  String retMsg = "{\"plc\": \"";
+  retMsg += lastmsg;
+  retMsg += "\", \"_timestamp\": ";
   retMsg += String(epoch);
   retMsg += "}";
   return retMsg;
