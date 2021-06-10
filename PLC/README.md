@@ -12,6 +12,6 @@ This is the part of the system that handle the two temperature sensors and the f
 	* UART comm with the HMI part of the system
 
 ## Project Schema
-![Breadboard view of the project](../docs/FanControl_IOT_v3-1_bb.png)
-![Schematics of the project](../docs/FanControl_IOT_v3-1_schem.png)
+![Breadboard view of the project](../docs/FanControl_IOT_v3-4_bb.png)
+![Schematics of the project](../docs/FanControl_IOT_v3-4_schem.png)
 

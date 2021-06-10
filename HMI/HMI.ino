@@ -39,7 +39,14 @@ bool connectWiFi(char* ssid, char* pass);
 //---------------------------------------------------------------------------------------------------
 /* Pin declarations */
 //---------------------------------------------------------------------------------------------------
-const int BTNS = A1;
+//const int BTNS = A1;
+const int BT_UP = 2, BT_DW = 3, BT_OK = 9, BT_ES = 10;
+volatile byte lastBtnPressed = 0;
+void btnUpPressed() { lastBtnPressed = 11; } // UP   botton
+void btnDwPressed() { lastBtnPressed = 22; } // DOWN botton
+void btnOkPressed() { lastBtnPressed = 33; } // OK   botton
+void btnEsPressed() { lastBtnPressed = 44; } // ESC  botton
+
 
 // Initialize the Ethernet client library
 // with the IP address and port of the server
@@ -75,8 +82,6 @@ byte lastT0 = 0, lastT1 = 0, lastTmin = 0, lastTmax = 0;
 
 // LCD Pages Strings
 int actualPage = 1;
-//byte TargetTempMin = 25;
-//byte TargetTempMax = 35;
 byte TempMod = 0;
 
 
@@ -102,7 +107,15 @@ void setup()
   Debug::println("-> LCD configured");
   
   // Pin setup
-  pinMode(BTNS, INPUT);
+  //pinMode(BTNS, INPUT);
+  pinMode(BT_UP, INPUT_PULLUP);
+  pinMode(BT_DW, INPUT_PULLUP);
+  pinMode(BT_OK, INPUT_PULLUP);
+  pinMode(BT_ES, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BT_UP), btnUpPressed, LOW);
+  attachInterrupt(digitalPinToInterrupt(BT_DW), btnDwPressed, LOW);
+  attachInterrupt(digitalPinToInterrupt(BT_OK), btnOkPressed, LOW);
+  attachInterrupt(digitalPinToInterrupt(BT_ES), btnEsPressed, LOW);
   Debug::println("-> Buttons configured");
 
   // Start the serial on the board
@@ -118,8 +131,10 @@ void setup()
   Debug::println("-> Connecting to WiFi...");
   connectWiFi(networkSSID, networkPASSWORD);
   Udp.begin(udpLocalPort);
+  //get a random server from the pool
+  WiFi.hostByName(ntpServerName, timeServer); 
   setSyncProvider(getNtpTime);
-  Debug::println("-> NTP configured");
+  //Debug::println("-> NTP configured");
 
   // Allow the hardware to sort itself out
   delay(1500);
@@ -136,13 +151,13 @@ void loop()
   // Check the buttons
   if (nowSensors - prevButton > BUTTON_SAMPLETIME) {
     prevButton = nowSensors;
-    int btnVal = analogRead(BTNS);
-    byte btnPress = getPressedButton(btnVal);
-    lpg.buttonPressed(btnPress);
-//    Debug::print("Analog read: ");
-//    Debug::print(btnVal);
-//    Debug::print("  Button: ");
-//    Debug::println(btnPress);
+    byte btn = lastBtnPressed;
+    lastBtnPressed = 0;  // Reset the status
+    if (btn != 0) {
+      lpg.buttonPressed(btn);
+      Debug::print("Last Pressed Button: ");
+      Debug::println(btn);
+    }
   }
 
   // Check uart connection
@@ -184,8 +199,13 @@ void loop()
     lpg.updateSensorValues(sens.sensor0temperature(), sens.sensor1temperature());
     lpg.updateTemperatureRange(sens.temperatureRangeMin(), sens.temperatureRangeMax()); 
     lpg.updateFanStatus(sens.fan0power(), sens.fan0isOn());
+    lpg.updateTimeStamp((byte)hour(), (byte)minute());
+    Debug::print("TimeStamp: ");
+    Debug::print((byte)hour());
+    Debug::print(" | ");
+    Debug::print((byte)minute());
     lpg.updateIotStatus(WiFi.status() == WL_CONNECTED, psClient.connected());
-    Debug::print("WiFi connected: ");
+    Debug::print(" | WiFi connected: ");
     Debug::print(WiFi.status() == WL_CONNECTED);
     Debug::print("  MQTT connected: ");
     Debug::println(psClient.connected());
@@ -193,8 +213,12 @@ void loop()
 
   // Check WiFi Connection
   if (WiFi.status() != WL_CONNECTED) {
-    connectWiFi(networkSSID, networkPASSWORD);
-    Udp.begin(udpLocalPort);
+    if (connectWiFi(networkSSID, networkPASSWORD)) {
+      Udp.begin(udpLocalPort);
+      //get a random server from the pool
+      WiFi.hostByName(ntpServerName, timeServer); 
+      setSyncProvider(getNtpTime);
+    }
   } else {  // WiFi Connected
     // Check MQTT Connection
     if (!psClient.connected()) {
@@ -257,14 +281,6 @@ void loop()
 //---------------------------------------------------------------------------------------------------
 /* Internal functions */
 //---------------------------------------------------------------------------------------------------
-
-byte getPressedButton(int value) {
-  if (value >= 180 && value <= 200) { return 11; }  // UP   botton
-  if (value >= 355 && value <= 375) { return 44; }  // CANC button
-  if (value >= 540 && value <= 560) { return 33; }  // OK   button
-  if (value >= 750 && value <= 770) { return 22; }  // DOWN button
-  return 0;
-}
 
 // send an NTP request to the time server at the given address
 unsigned long sendNTPpacket(IPAddress &address) {

@@ -11,6 +11,6 @@ This is the part of the system that handle the interface to the user and the com
 	* MQTT client topic publishing
 
 ## Project Schema
-![Breadboard view of the project](../docs/FanControl_IOT_v3-1_bb.png)
-![Schematics of the project](../docs/FanControl_IOT_v3-1_schem.png)
+![Breadboard view of the project](../docs/FanControl_IOT_v3-4_bb.png)
+![Schematics of the project](../docs/FanControl_IOT_v3-4_schem.png)
 

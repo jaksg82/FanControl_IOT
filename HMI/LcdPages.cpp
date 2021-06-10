@@ -99,25 +99,33 @@ void LcdPages::changeActualTempString() {
 
 void LcdPages::changeFanString() {
 	// Fan Duty Percentage
-	char fanc[4]{};
-  sprintf(fanc, "%4d", this->_fanPerc);
-  char c0 = fanc[0];
-  char c1 = fanc[1];
-  char c2 = fanc[2];
-  char c3 = fanc[3];
-	this->p0_1[5] = c1;
-	this->p0_1[6] = c2;
-	this->p0_1[7] = c3;
-
 	if (_isOn) {
-		this->p0_1[10] = 'O';
-		this->p0_1[11] = 'N';
-		this->p0_1[12] = ' ';
+    char fanc[4]{};
+    sprintf(fanc, "%4d", this->_fanPerc);
+    char c0 = fanc[0];
+    char c1 = fanc[1];
+    char c2 = fanc[2];
+    char c3 = fanc[3];
+    this->p0_1[4] = c1;
+    this->p0_1[5] = c2;
+    this->p0_1[6] = c3;
+    this->p0_1[7] = '%';
 	} else {
-		this->p0_1[10] = 'O';
-		this->p0_1[11] = 'F';
-		this->p0_1[12] = 'F';
+    this->p0_1[4] = ' ';
+    this->p0_1[5] = 'O';
+		this->p0_1[6] = 'F';
+		this->p0_1[7] = 'F';
 	}
+  // Time Stamp
+  char hhc[3]{};
+  char mmc[3]{};
+  sprintf(hhc, "%2d", this->_hh);
+  sprintf(mmc, "%2d", this->_mm);
+  this->p0_1[9] = (char)hhc[0];
+  this->p0_1[10] = (char)hhc[1];
+  this->p0_1[11] = (char)mmc[0];
+  this->p0_1[12] = (char)mmc[1];
+
   //Check what page is active
   if (this->_actualPage == 0) { updateLcd(); }
 }
@@ -263,6 +271,14 @@ void LcdPages::updateFanStatus(byte fanPerc, bool isOn) {
   if (this->_fanPerc != fanPerc || this->_isOn != isOn) {
     this->_fanPerc = fanPerc;
     this->_isOn = isOn;
+    this->changeFanString();
+  }
+}
+
+void LcdPages::updateTimeStamp(byte hh, byte mm) {
+  if(this->_hh != hh || this->_mm != mm) {
+    this->_hh = hh;
+    this->_mm = mm;
     this->changeFanString();
   }
 }

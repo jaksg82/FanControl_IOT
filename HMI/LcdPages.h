@@ -31,10 +31,12 @@ class LcdPages : public Print {
   byte _ttemp = 0;
   byte _fanPerc = 0;
   bool _isOn = false;
+  byte _hh = 0;
+  byte _mm = 0;
   //  16 chars     0000000000111111  
   //               0123456789012345
   char p0_0[20] = "T0:     T1:     ";
-	char p0_1[20] = "Fan:    % OFF   ";
+	char p0_1[20] = "Fan:   % 0000   ";
 	char p1_0[20] = "Temperatures    ";
   char p1_1[20] = "Min:    Max:    ";
 	bool _isEditPage = false;
@@ -73,6 +75,7 @@ class LcdPages : public Print {
 	void updateSensorValues(byte t0, byte h0, byte t1, byte h1);
 	void updateFanStatus(byte fanPerc, bool isOn);
 	void updateIotStatus(bool isWifiConnected, bool isMqttConnected);
+  void updateTimeStamp(byte hh, byte mm);
  
 	// Page handling
 	bool buttonPressed(byte btn);
