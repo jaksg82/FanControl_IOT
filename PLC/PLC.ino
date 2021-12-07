@@ -21,6 +21,12 @@ float t1avg();
 #include "Debug.h"
 #include "eepromUtil.h"
 
+//---------------------------------------------------------------------------------------------------
+// Local headers
+//---------------------------------------------------------------------------------------------------
+const uint8_t yesValue = 111;
+const uint8_t noValue = 222;
+
 /*        Pinouts       */
 const int RPM0 = 2;        // RPM input pin on interrupt0
 const int RPM1 = 3;        // RPM input pin on interrupt1
@@ -179,8 +185,6 @@ void loop()
   //------------------------------------------------------------
   if (cur - prevDht >= DHT_SAMPLETIME)
   {
-    byte t = 0, h = 0;
-    byte data[40] = {0};
     prevDht = cur;
     GetSensorData(&sensor1, &Temperature1, &Humidity1);
     GetSensorData(&sensor2, &Temperature2, &Humidity2);
@@ -321,12 +325,12 @@ void UInt16ToHex(uint16_t value) {
   Debug::print(valChars);
 }
 
-void Int32ToHex(int32_t value) {
+/*void Int32ToHex(int32_t value) {
   char valChars[8]{};
   sprintf(valChars, "%.8X", value);
   Serial1.print(valChars);
   Debug::print(valChars);
-}
+}*/
 
 byte parseHex4(char value) {
   switch (value) {
@@ -395,8 +399,8 @@ void setTargetsFromString(String inputStr) {
   byte tmpT1 = TargetTempMax;
   // Example of input string:  $TTFFFF;
   if(inputStr.substring(0, 2) == "$TT") {
-    tmpT0 = parseHex8(inputStr.substring(3, 4);
-    tmpT1 = parseHex8(inputStr.substring(5, 6);
+    tmpT0 = parseHex8(inputStr.substring(3, 4));
+    tmpT1 = parseHex8(inputStr.substring(5, 6));
   }
   if(tmpT0 != TargetTempMin || tmpT1 != TargetTempMax) {
     if(tmpT0 == tmpT1) {
