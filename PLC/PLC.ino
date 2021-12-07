@@ -64,7 +64,8 @@ void falling1() {
 }*/
 
 /* Uart Comm Configs */
-const byte RequestSize = 6;
+// Example of input string:  $TTFFFF;
+const byte RequestSize = 8;
 byte requestMsg[RequestSize] {};
 CircularBuffer<char,50> msgBuff;
 
@@ -259,13 +260,34 @@ void loop()
   //------------------------------------------------------------
   // Check for incoming requests on the serial
   //------------------------------------------------------------
-  //if (cur - prevComm >= NodeReadDelay) {
-      if (Serial1.available() >= RequestSize) {
-          // Read the request message
-          //Debug::println("Request Available");
-          //readRequest();
+  if (Serial.available()) {
+    // Get the available chars
+    while (Serial.available()) {
+      msgBuff.push((char)Serial.read());
+    }
+    // Scan the buffer for the starting char
+    while (!msgBuff.isEmpty()) {
+      if (msgBuff.first() == '$') {
+        if (msgBuff.size() > RequestSize) {
+          String tmp;
+          char tc;
+          for (byte i = 0; i <= RequestSize; i++) {
+            tc = (char)msgBuff.shift();
+            tmp += tc;
+            if (tc == ';') { break; }
+          }
+          // Parse the string
+          setTargetsFromString(tmp);
+          Debug::println(tmp);
+          break; // exit while message readed
+        } else {
+          break; // need to recieve more chars from the serial
+        }
+      } else {
+        msgBuff.shift(); // discard the first char
       }
-  //}
+    }
+  }
 
 }
 
@@ -306,29 +328,89 @@ void Int32ToHex(int32_t value) {
   Debug::print(valChars);
 }
 
+byte parseHex4(char value) {
+  switch (value) {
+    case '0': return 0; break;
+    case '1': return 1; break;
+    case '2': return 2; break;
+    case '3': return 3; break;
+    case '4': return 4; break;
+    case '5': return 5; break;
+    case '6': return 6; break;
+    case '7': return 7; break;
+    case '8': return 8; break;
+    case '9': return 9; break;
+    case 'A': return 10; break;
+    case 'a': return 10; break;
+    case 'B': return 11; break;
+    case 'b': return 11; break;
+    case 'C': return 12; break;
+    case 'c': return 12; break;
+    case 'D': return 13; break;
+    case 'd': return 13; break;
+    case 'E': return 14; break;
+    case 'e': return 14; break;
+    case 'F': return 15; break;
+    case 'f': return 15; break;
+    case 'Y': return yesValue; break;
+    case 'N': return noValue; break;
+    default: return 255;
+  }
+}
+
+byte parseHex8(String value) {
+  byte retVal = UINT8_MAX;
+  if (value.length() >= 2) {
+     byte c0 = parseHex4((char)value.charAt(0));
+     byte c1 = parseHex4((char)value.charAt(1));
+     if (c0 != 255 && c1 != 255) {
+      retVal = (c0 * 16) + c1;
+     }
+  }
+  return retVal;
+}
+
 //---------------------------------------------------------------------------------------
 // Temperature sensor functions
 //---------------------------------------------------------------------------------------
 int GetSensorData(SimpleDHT11* pSensor, byte* ptemperature, byte* phumidity) {
-    byte t = 0, h = 0;
-    byte pdata[40] = { 0 };
-    if (!pSensor->read(&t, &h, pdata))
-    {
-        Debug::print("Temperature: ");
-        Debug::println(t);
-
-        if (!isnan(t)) { *ptemperature = t; }
-        if (!isnan(h)) { *phumidity = h; }
-        return 1;
-    }
-    else
-    {
-        // If there's an error in the sensor, wait 5 seconds to let the communication reset
-        Debug::println("Temperature: Error");
-        return 0;
-    }
-
+  byte t = 0, h = 0;
+  byte pdata[40] = { 0 };
+  if (!pSensor->read(&t, &h, pdata)) {
+    Debug::print("Temperature: ");
+    Debug::println(t);
+    if (!isnan(t)) { *ptemperature = t; }
+    if (!isnan(h)) { *phumidity = h; }
+    return 1;
+  } else {
+    // If there's an error in the sensor
+    Debug::println("Temperature: Error");
+    return 0;
+  }
 }
+
+
+void setTargetsFromString(String inputStr) {
+  byte tmpT0 = TargetTempMin;
+  byte tmpT1 = TargetTempMax;
+  // Example of input string:  $TTFFFF;
+  if(inputStr.substring(0, 2) == "$TT") {
+    tmpT0 = parseHex8(inputStr.substring(3, 4);
+    tmpT1 = parseHex8(inputStr.substring(5, 6);
+  }
+  if(tmpT0 != TargetTempMin || tmpT1 != TargetTempMax) {
+    if(tmpT0 == tmpT1) {
+      tmpT1 += 1;
+    } else if(tmpT0 > tmpT1) {
+      TargetTempMin = tmpT1;
+      TargetTempMax = tmpT0;
+    } else {
+      TargetTempMin = tmpT0;
+      TargetTempMax = tmpT1;
+    }
+  }
+}
+
 
 //---------------------------------------------------------------------------------------
 // RPM interrupt
