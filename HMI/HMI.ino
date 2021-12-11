@@ -1,3 +1,6 @@
+//#define LCD_SCREEN_1602A
+#define LCD_SCREEN_2004A
+
 //---------------------------------------------------------------------------------------------------
 /* Arduino libraries */
 //---------------------------------------------------------------------------------------------------
@@ -35,6 +38,7 @@ bool connectWiFi(char* ssid, char* pass);
 #include "MemoryFree.h"
 #include "mqttUtil.h"               // This header contain the functions related to the MQTT
 #include "SensorsHandler.h"
+#include "ByteRange.h"
 
 //---------------------------------------------------------------------------------------------------
 /* Pin declarations */
@@ -46,7 +50,7 @@ void btnUpPressed() { lastBtnPressed = 11; } // UP   botton
 void btnDwPressed() { lastBtnPressed = 22; } // DOWN botton
 void btnOkPressed() { lastBtnPressed = 33; } // OK   botton
 void btnEsPressed() { lastBtnPressed = 44; } // ESC  botton
-
+ByteRange tRange = ByteRange(0, 99);
 
 // Initialize the Ethernet client library
 // with the IP address and port of the server
@@ -81,8 +85,8 @@ SensorsHandler sens;                         // Sensor helper class
 byte lastT0 = 0, lastT1 = 0, lastTmin = 0, lastTmax = 0;
 
 // LCD Pages Strings
-int actualPage = 1;
-byte TempMod = 0;
+//int actualPage = 1;
+//byte TempMod = 0;
 
 
 // Initialize the LCD library
@@ -154,9 +158,28 @@ void loop()
     byte btn = lastBtnPressed;
     lastBtnPressed = 0;  // Reset the status
     if (btn != 0) {
-      lpg.buttonPressed(btn);
-      Debug::print("Last Pressed Button: ");
-      Debug::println(btn);
+      ByteRange tr = lpg.buttonPressed(btn);
+      if(tr.GetCeiling() == 255) {
+        Debug::print("Last Pressed Button: ");
+        Debug::println(btn);
+      } else {
+        byte t0 = tr.GetMin();
+        byte t1 = tr.GetMax();
+        // Send the new range values to the PLC via uart
+        // Example of output string:  $TTFFFF;
+        char oRng[10] = "$TT0000;";
+        char t0c[4]{};
+        char t1c[4]{};
+        sprintf(t0c, "%.2X", t0);
+        sprintf(t1c, "%.2X", t1);
+        oRng[3] = t0c[0];
+        oRng[4] = t0c[1];
+        oRng[5] = t1c[0];
+        oRng[6] = t1c[1];
+        Debug::print("New Range: ");
+        Debug::println(oRng);
+        Serial1.println(oRng);
+      }
     }
   }
 
@@ -199,7 +222,8 @@ void loop()
     lpg.updateSensorValues(sens.sensor0temperature(), sens.sensor1temperature());
     lpg.updateTemperatureRange(sens.temperatureRangeMin(), sens.temperatureRangeMax()); 
     lpg.updateFanStatus(sens.fan0power(), sens.fan0isOn());
-    lpg.updateTimeStamp((byte)hour(), (byte)minute());
+    //  updateTimeStamp(uint16_t yy, byte mt, byte dd, byte hh, byte mm, byte ss);
+    lpg.updateTimeStamp((uint16_t)year(), (byte)month(), (byte)day(), (byte)hour(), (byte)minute(), (byte)second());
     Debug::print("TimeStamp: ");
     Debug::print((byte)hour());
     Debug::print(" | ");
@@ -283,7 +307,7 @@ void loop()
 //---------------------------------------------------------------------------------------------------
 
 // send an NTP request to the time server at the given address
-unsigned long sendNTPpacket(IPAddress &address) {
+void sendNTPpacket(IPAddress &address) {
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
