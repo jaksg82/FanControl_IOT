@@ -229,12 +229,12 @@ void LcdPages::changeTimeString() {
   char hhc[4]{};
   char mmc[4]{};
   char ssc[4]{};
-  sprintf(yyc, "%4d", this->_yy);
-  sprintf(mtc, "%2d", this->_mt);
-  sprintf(ddc, "%2d", this->_dd);
-  sprintf(hhc, "%2d", this->_hh);
-  sprintf(mmc, "%2d", this->_mm);
-  sprintf(ssc, "%2d", this->_ss);
+  sprintf(yyc, "%04d", this->_yy);
+  sprintf(mtc, "%02d", this->_mt);
+  sprintf(ddc, "%02d", this->_dd);
+  sprintf(hhc, "%02d", this->_hh);
+  sprintf(mmc, "%02d", this->_mm);
+  sprintf(ssc, "%02d", this->_ss);
   this->p0_0[0] = (char)yyc[0];
   this->p0_0[1] = (char)yyc[1];
   this->p0_0[2] = (char)yyc[2];

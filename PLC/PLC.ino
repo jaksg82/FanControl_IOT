@@ -90,8 +90,8 @@ byte Humidity1 = 0;
 byte Humidity2 = 0;
 byte TargetTempMin = 25;
 byte TargetTempMax = 35;
-CircularBuffer<byte,5> t0buff;
-CircularBuffer<byte,5> t1buff;
+CircularBuffer<byte,10> t0buff;
+CircularBuffer<byte,10> t1buff;
 
 // Initialize all the libraries.
 SimpleDHT11 sensor1(TEMP1_IN), sensor2(TEMP2_IN);
@@ -201,24 +201,28 @@ void loop()
     prevPwm = cur;
     // Compute the duty cicle
     float maxTemp = max(t0avg(), t1avg());
-    byte DutyMin = 64, DutyMax = 255;  // DutyMin approx. 25%
-    duty = ((maxTemp - TargetTempMin) * ((DutyMax - DutyMin) / (TargetTempMax - TargetTempMin))) + DutyMin;
-    // fit the duty in the range 0-255
-    if (duty < 0) { duty = 0; }
-    if (duty > 255) { duty = 255; }
-    
-    // Turn the fans ON/OFF
-    if (round(duty) < DutyMin)
-    {
+    if(maxTemp < TargetTempMin) {
       pwmSet6(0);
       fanRelay0.off();
       fanRelay1.off();
-    }
-    else
-    {
-      pwmSet6(duty);
-      fanRelay0.on();
-      fanRelay1.on();
+    } else {
+      float DutyMin = 64.0, DutyMax = 255.0;  // DutyMin approx. 25%
+      float calc06 = mapFloat(maxTemp, TargetTempMin, TargetTempMax, 64.0, 255.0);
+      duty = calc06;
+      // fit the duty in the range 0-255
+      if (duty < 0) { duty = 0; }
+      if (duty > DutyMax) { duty = DutyMax; }
+     
+      // Turn the fans ON/OFF
+      if (round(duty) < DutyMin) {
+        pwmSet6(0);
+        fanRelay0.off();
+        fanRelay1.off();
+      } else {
+        pwmSet6(duty);
+        fanRelay0.on();
+        fanRelay1.on();
+      }
     }
     Debug::print("TargetTempMin: ");
     Debug::print(TargetTempMin);
@@ -281,7 +285,7 @@ void loop()
             if (tc == ';') { break; }
           }
           // Parse the string
-          setTargetsFromString(tmp);
+          SetTargetsFromString(tmp);
           Debug::println(tmp);
           break; // exit while message readed
         } else {
@@ -332,7 +336,7 @@ void UInt16ToHex(uint16_t value) {
   Debug::print(valChars);
 }*/
 
-byte parseHex4(char value) {
+byte ParseHex4(char value) {
   switch (value) {
     case '0': return 0; break;
     case '1': return 1; break;
@@ -362,11 +366,11 @@ byte parseHex4(char value) {
   }
 }
 
-byte parseHex8(String value) {
+byte ParseHex8(String value) {
   byte retVal = UINT8_MAX;
   if (value.length() >= 2) {
-     byte c0 = parseHex4((char)value.charAt(0));
-     byte c1 = parseHex4((char)value.charAt(1));
+     byte c0 = ParseHex4((char)value.charAt(0));
+     byte c1 = ParseHex4((char)value.charAt(1));
      if (c0 != 255 && c1 != 255) {
       retVal = (c0 * 16) + c1;
      }
@@ -394,23 +398,18 @@ int GetSensorData(SimpleDHT11* pSensor, byte* ptemperature, byte* phumidity) {
 }
 
 
-void setTargetsFromString(String inputStr) {
-  byte tmpT0 = TargetTempMin;
-  byte tmpT1 = TargetTempMax;
+void SetTargetsFromString(String inputStr) {
   // Example of input string:  $TTFFFF;
   if(inputStr.substring(0, 2) == "$TT") {
-    tmpT0 = parseHex8(inputStr.substring(3, 4));
-    tmpT1 = parseHex8(inputStr.substring(5, 6));
-  }
-  if(tmpT0 != TargetTempMin || tmpT1 != TargetTempMax) {
-    if(tmpT0 == tmpT1) {
-      tmpT1 += 1;
-    } else if(tmpT0 > tmpT1) {
-      TargetTempMin = tmpT1;
-      TargetTempMax = tmpT0;
-    } else {
-      TargetTempMin = tmpT0;
-      TargetTempMax = tmpT1;
+    byte tmpT0 = ParseHex8(inputStr.substring(3, 4));
+    byte tmpT1 = ParseHex8(inputStr.substring(5, 6));
+    if(tmpT0 >= 0 && tmpT0 < 99) {
+      if(tmpT1 > 0 && tmpT1 <= 99) {
+        if(tmpT0 < tmpT1) {
+          TargetTempMin = tmpT0;
+          TargetTempMax = tmpT1;
+        }
+      }
     }
   }
 }
@@ -430,31 +429,31 @@ void UpdateRpmValues() {
   pulsecount1 = 0; // Restart the counter
   attachInterrupt(digitalPinToInterrupt(RPM0), pickRpm0, FALLING); // Enable the interrupt
   attachInterrupt(digitalPinToInterrupt(RPM1), pickRpm1, FALLING); // Enable the interrupt
-  Debug::print("Ticks0: ");
-  Debug::print(ticks0);
-  Debug::print(" Ticks1: ");
-  Debug::println(ticks1);
-  Debug::print("lastRpmRead: ");
-  Debug::print(lastRpmRead);
-  Debug::print(" actualRpmRead: ");
-  Debug::print(actualRpmRead);
-  Debug::print(" sample time: ");
-  Debug::println(actualRpmRead-lastRpmRead);
+  //Debug::print("Ticks0: ");
+  //Debug::print(ticks0);
+  //Debug::print(" Ticks1: ");
+  //Debug::println(ticks1);
+  //Debug::print("lastRpmRead: ");
+  //Debug::print(lastRpmRead);
+  //Debug::print(" actualRpmRead: ");
+  //Debug::print(actualRpmRead);
+  //Debug::print(" sample time: ");
+  //Debug::println(actualRpmRead-lastRpmRead);
   if (ticks0 > 0) {
     rpm0 = (ticks0 / 2) * 60 / ((actualRpmRead - lastRpmRead) / 1000); // Convert from Hz to RPM
-    Debug::print("RPM0: ");
-    Debug::println(rpm0);
+    //Debug::print("RPM0: ");
+    //Debug::println(rpm0);
   } else {
     rpm0 = 0;
-    Debug::println("Fans0 not working!!!");
+    //Debug::println("Fans0 not working!!!");
   }
   if (ticks1 > 0) {
     rpm1 = (ticks1 / 2) * 60 / ((actualRpmRead - lastRpmRead) / 1000); // Convert from Hz to RPM
-    Debug::print("RPM1: ");
-    Debug::println(rpm1);
+    //Debug::print("RPM1: ");
+    //Debug::println(rpm1);
   } else {
     rpm1 = 0;
-    Debug::println("Fans1 not working!!!");
+    //Debug::println("Fans1 not working!!!");
   }
 }
 
@@ -519,4 +518,9 @@ float t1avg() {
     }
     return avg1;
   }
+}
+
+    //duty = ((maxTemp - TargetTempMin) * ((DutyMax - DutyMin) / (TargetTempMax - TargetTempMin))) + DutyMin;
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
